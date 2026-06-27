@@ -1,0 +1,4263 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CNMI Blood Mobile — Offline Secure</title>
+  <meta name="theme-color" content="#2f80ed">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="CNMI Blood Mobile">
+  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="assets/vendor/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/JsBarcode.all.min.js"></script>
+  <script src="assets/vendor/xlsx.full.min.js"></script>
+  <script src="js/offline-backend.js"></script>
+
+  <style>
+    :root { --cnmi-blue: #2f80ed; --cnmi-blue-soft: #eaf4ff; --cnmi-blue-border: #b8dafc; --cnmi-blue-dark: #185abc; --cnmi-text: #18324a; --cnmi-muted: #6b7a8a; --cnmi-card: #ffffff; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; overflow-x: hidden; }
+    body { background: radial-gradient(circle at top left, #dff1ff 0, transparent 34%), linear-gradient(135deg, #f7fbff 0%, #eaf4ff 100%); padding: 16px; font-family: 'Sarabun', sans-serif; color: var(--cnmi-text); }
+    .app-topbar { max-width: 1320px; margin: 0 auto 14px auto; background: rgba(255, 255, 255, 0.92); border: 1px solid var(--cnmi-blue-border); border-radius: 18px; padding: 14px 18px; box-shadow: 0 10px 24px rgba(47, 128, 237, 0.10); }
+    .app-title { margin: 0; font-size: 22px; font-weight: 700; color: var(--cnmi-blue-dark); }
+    .app-subtitle { margin: 4px 0 0 0; font-size: 14px; color: var(--cnmi-muted); }
+    .container { max-width: 1320px; }
+    .main-card { background: var(--cnmi-card); padding: 22px; border-radius: 18px; border: 1px solid rgba(184, 218, 252, 0.85); box-shadow: 0 10px  margin-bottom: 18px; }
+    .header-title { color: var(--cnmi-blue-dark); font-weight: 700; border-bottom: 2px solid var(--cnmi-blue); padding-bottom: 10px; margin-bottom: 20px; }
+    .btn-primary { background-color: var(--cnmi-blue) !important; border-color: var(--cnmi-blue) !important; }
+    .btn-primary:hover { background-color: var(--cnmi-blue-dark) !important; border-color: var(--cnmi-blue-dark) !important; }
+    .btn-danger { background-color: #2f80ed !important; border-color: #2f80ed !important; }
+    .btn-danger:hover { background-color: #185abc !important; border-color: #185abc !important; }
+    .table-responsive { overflow-x: auto; }
+    #visit-table-body tr { cursor: pointer; transition: background-color 0.18s ease; }
+    #visit-table-body tr:hover td { background-color: #eef6ff !important; }
+    #visit-table-body td { vertical-align: middle; }
+    .btn-group { flex-wrap: wrap; gap: 6px; }
+    .btn-group .btn { border-radius: 8px !important; margin: 0 !important; }
+    .action-btn { transition: all 0.18s ease; border-width: 1px !important; font-weight: 600; }
+    .action-btn-edit { background: #ffffff !important; color: #19a7ce !important; border-color: #19a7ce !important; }
+    .action-btn-edit:hover { background: #19a7ce !important; color: #ffffff !important; border-color: #19a7ce !important; }
+    .action-btn-print { background: #ffffff !important; color: #ef4b56 !important; border-color: #ef4b56 !important; }
+    .action-btn-print:hover { background: #ef4b56 !important; color: #ffffff !important; border-color: #ef4b56 !important; }
+    .action-btn-cert { background: #ffffff !important; color: #6f42c1 !important; border-color: #6f42c1 !important; }
+    .action-btn-cert:hover { background: #6f42c1 !important; color: #ffffff !important; border-color: #6f42c1 !important; }
+    .action-btn-screen { background: #ffffff !important; color: #b58500 !important; border-color: #f2c94c !important; }
+    .action-btn-screen:hover { background: #f2c94c !important; color: #ffffff !important; border-color: #f2c94c !important; }
+    .action-btn-sticker { background: #ffffff !important; color: #1f78ff !important; border-color: #1f78ff !important; }
+    .action-btn-sticker:hover { background: #1f78ff !important; color: #ffffff !important; border-color: #1f78ff !important; }
+    .detail-label { font-weight: 700; color: #555; }
+    .detail-value { color: #111; }
+    .detail-box { background: #f8f9fa; border-radius: 10px; padding: 12px 14px; border: 1px solid #e9ecef; }
+    .reason-fail { color: #dc3545; font-weight: 700; }
+    .reason-pending { color: #c79100; font-weight: 700; }
+    .reason-pass { color: #198754; font-weight: 700; }
+    #a4-template,
+    #tsc-template,
+    #cert-template { display: none; }
+    /* ===== App Sidebar Layout ===== */
+    .app-layout { display: flex; min-height: 100vh; gap: 0; }
+    .sidebar { width: 310px; min-width: 310px; background: linear-gradient(180deg, #2f6690 0%, #245176 100%); color: #ffffff; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; box-shadow: 8px 0 24px rgba(24, 50, 74, 0.14); z-index: 1000; }
+    .sidebar-brand { padding: 24px 22px 18px 22px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.16); }
+    .sidebar-logo { width: 56px; height: 56px; border-radius: 18px; background: #4aa3eb; display: grid; place-items: center; font-size: 30px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16); }
+    .sidebar-logo-img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; }
+    .sidebar-title { font-size: 22px; font-weight: 700; line-height: 1.15; }
+    .sidebar-subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.68); margin-top: 4px; }
+
+.sidebar-nav {
+  padding: 14px 12px;
+  flex: 1;
+}
+
+.nav-btn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.82);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 16px;
+  text-align: left;
+  transition: 0.18s ease;
+  margin-bottom: 6px;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.nav-btn.active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.nav-icon {
+  width: 28px;
+  text-align: center;
+  font-size: 20px;
+}
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.user-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 22px;
+}
+
+.user-name {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.logout-btn {
+  width: 100%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 12px 14px;
+  border-radius: 16px;
+  font-weight: 700;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: 18px;
+}
+
+.mobile-header {
+  display: none;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--cnmi-blue-border);
+  border-radius: 18px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-menu-btn {
+  border: 1px solid var(--cnmi-blue-border);
+  background: #ffffff;
+  color: var(--cnmi-blue-dark);
+  border-radius: 14px;
+  width: 46px;
+  height: 46px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.page-section {
+  display: none;
+}
+
+.page-section.active {
+  display: block;
+}
+
+.page-title-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--cnmi-blue-border);
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 24px rgba(47, 128, 237, 0.08);
+}
+
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--cnmi-blue-dark);
+}
+
+.page-desc {
+  margin: 4px 0 0 0;
+  color: var(--cnmi-muted);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.dashboard-card {
+  background: #ffffff;
+  border: 1px solid var(--cnmi-blue-border);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 24px rgba(47, 128, 237, 0.08);
+}
+
+.dashboard-card-label {
+  color: var(--cnmi-muted);
+  font-size: 14px;
+}
+
+.dashboard-card-value {
+  color: var(--cnmi-blue-dark);
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+.menu-helper-card {
+  background: #ffffff;
+  border: 1px solid var(--cnmi-blue-border);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 10px 24px rgba(47, 128, 237, 0.08);
+}
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+        .app-layout {
+    display: block;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -330px;
+    top: 0;
+    height: 100vh;
+    transition: left 0.22s ease;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(24, 50, 74, 0.36);
+    z-index: 999;
+  }
+
+  .sidebar-backdrop.show {
+    display: block;
+  }
+
+  .app-main {
+    padding: 10px;
+  }
+
+  .mobile-header {
+    display: flex;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+      
+      .app-topbar {
+        padding: 12px 14px;
+        border-radius: 14px;
+      }
+
+      .app-title {
+        font-size: 19px;
+      }
+
+      .main-card {
+        padding: 14px;
+        border-radius: 14px;
+      }
+
+      .header-title {
+        font-size: 1.35rem;
+      }
+
+      .d-flex.gap-2 {
+        flex-wrap: wrap;
+      }
+
+      .btn.btn-lg {
+        width: 100%;
+      }
+
+      .col-auto.ms-auto {
+        width: 100%;
+        flex-wrap: wrap;
+        margin-left: 0 !important;
+      }
+
+      #dn-search,
+      #table-date {
+        width: 100% !important;
+      }
+
+      .table {
+        min-width: 820px;
+      }
+    }
+
+    @media print {
+      .app-topbar,
+      .container,
+      .main-card,
+      button,
+      .modal {
+        display: none !important;
+      }
+
+      html,
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        font-family: 'Sarabun', sans-serif !important;
+      }
+
+      #a4-template.active-print {
+        display: block !important;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 210mm;
+        height: 297mm;
+        background: white;
+        z-index: 9999;
+      }
+
+      .print-data {
+        position: absolute;
+        color: black;
+        font-size: 14pt;
+      }
+
+      #p-dn { top: 38mm; left: 140mm; font-weight: bold; font-size: 16pt; }
+      #p-barcode { top: 48mm; left: 140mm; width: 42mm; height: 14mm; }
+      #p-name { top: 38mm; left: 10mm; }
+      #p-id { top: 48mm; left: 10mm; }
+      #p-birth { top: 58mm; left: 10mm; }
+      #p-age { top: 58mm; left: 72mm; }
+      #p-gender { top: 58mm; left: 95mm; }
+      #p-address { top: 68mm; left: 10mm; width: 190mm; }
+
+      #cert-template.active-print {
+        display: block !important;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 210mm;
+        min-height: 297mm;
+        background: white;
+        z-index: 9999;
+      }
+
+      .cert-page {
+        width: 210mm;
+        min-height: 297mm;
+        box-sizing: border-box;
+        padding: 14mm 16mm 18mm 16mm;
+        font-family: 'Sarabun', sans-serif;
+        color: #222;
+        line-height: 1.8;
+        font-size: 16px;
+      }
+
+      .cert-header {
+        text-align: center;
+        margin-bottom: 10mm;
+      }
+
+      .cert-header-top {
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      .cert-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-top: 8mm;
+      }
+
+      .cert-row {
+        margin-bottom: 6mm;
+      }
+
+      .cert-line {
+        display: inline-block;
+        border-bottom: 1px dotted #333;
+        min-width: 120px;
+        padding: 0 4px;
+      }
+
+      .cert-line.long {
+        min-width: 420px;
+      }
+
+      .cert-line.mid {
+        min-width: 220px;
+      }
+
+      .cert-sign-area {
+        margin-top: 20mm;
+        width: 100%;
+        text-align: center;
+      }
+
+      .cert-sign-line {
+        display: inline-block;
+        border-bottom: 1px dotted #333;
+        min-width: 240px;
+        height: 28px;
+      }
+
+      .cert-muted {
+        color: #444;
+      }
+
+      #tsc-template.active-print {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 50mm;
+        background: #fff;
+      }
+
+      .label-box {
+        width: 50mm;
+        height: 30mm;
+        padding: 2mm 2mm 0.5mm 2mm;
+        box-sizing: border-box;
+        overflow: hidden;
+        page-break-after: always;
+        position: relative;
+        background: #fff;
+        font-family: 'Sarabun', sans-serif;
+      }
+
+      .st-name {
+        font-size: 2.8mm;
+        font-weight: 500;
+        line-height: 1.02;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: clip;
+        margin: 0 0 1.02mm 0;
+      }
+
+      .st-line {
+        font-size: 2.8mm;
+        line-height: 1;
+        margin: 0 0 0.5mm 0;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: clip;
+      }
+
+      .st-bar-wrap {
+        margin: 0 0 0.45mm 0.3mm;
+        line-height: 0;
+        text-align: left;
+        display: flex;
+        justify-content: flex-start;
+      }
+
+      .st-row-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 1.2mm;
+        width: 100%;
+        font-size: 3.5mm;
+        line-height: 1;
+        margin: 0;
+      }
+
+      .st-code {
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 40mm;
+      }
+
+      .st-type {
+        font-size: 3.4mm;
+        font-style: italic;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .st-blood {
+        font-size: 3.5mm;
+        font-weight: 700;
+        line-height: 1;
+        margin-top: 0.3mm;
+        white-space: nowrap;
+      }
+
+      .st-component-wrap {
+        position: relative;
+        margin-top: 0.45mm;
+        min-height: 9.2mm;
+      }
+
+      .st-component-tag {
+        position: absolute;
+        right: 0;
+        bottom: 0.1mm;
+        font-size: 3.8mm;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      /*
+       * TSC TE310 preset: 300 dpi = 12 dots/mm.
+       * The renderer calculates the physical SVG width from an exact 3-dot
+       * Code 128 module. This avoids fractional-dot bar widths in the driver.
+       */
+      .bc-bag-sticker,
+      .bc-main-sticker,
+      .bc-component-sticker {
+        width: auto;
+        height: auto;
+        max-width: 42mm;
+        display: block;
+        overflow: visible;
+        flex: 0 0 auto;
+        shape-rendering: crispEdges;
+      }
+
+      .bc-component-sticker {
+        margin: 0 !important;
+      }
+
+      .bc-bag-sticker text,
+      .bc-main-sticker text,
+      .bc-component-sticker text {
+        display: none !important;
+      }
+    }
+
+      /* ===== Login Page ===== */
+.login-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background:
+    radial-gradient(circle at top left, #dff1ff 0, transparent 34%),
+    linear-gradient(135deg, #f7fbff 0%, #eaf4ff 100%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 520px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--cnmi-blue-border);
+  border-radius: 26px;
+  padding: 34px;
+  box-shadow: 0 18px 42px rgba(47, 128, 237, 0.16);
+}
+
+.login-logo {
+  width: 86px;
+  height: 86px;
+  border-radius: 28px;
+  background: #4aa3eb;
+  display: grid;
+  place-items: center;
+  font-size: 42px;
+  margin: 0 auto 18px auto;
+  box-shadow: 0 14px 32px rgba(47, 128, 237, 0.20);
+  overflow: hidden;
+}
+
+.login-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.login-title {
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--cnmi-blue-dark);
+  margin-bottom: 8px;
+}
+
+.login-subtitle {
+  text-align: center;
+  color: var(--cnmi-muted);
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.login-note {
+  background: #eaf4ff;
+  border: 1px solid #b8dafc;
+  color: #185abc;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+
+.login-link-btn {
+  border: 0;
+  background: transparent;
+  color: var(--cnmi-blue-dark);
+  font-weight: 700;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.login-error {
+  display: none;
+  background: #fff0f0;
+  color: #c62828;
+  border: 1px solid #ffc9c9;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.auth-hidden {
+  display: none !important;
+}
+
+.audit-detail-cell {
+  min-width: 280px;
+  max-width: 420px;
+  white-space: normal;
+}
+
+.audit-useragent-cell {
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.audit-action-badge {
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+    .nav-sub-btn {
+  padding-left: 38px !important;
+  font-size: 14px;
+  opacity: 0.96;
+}
+
+.audit-row {
+  cursor: pointer;
+}
+
+.audit-row:hover td {
+  background-color: #eef6ff !important;
+}
+
+.audit-detail-cell {
+  min-width: 260px;
+  max-width: 420px;
+  white-space: normal;
+}
+
+  /* ===== Multi-level Sidebar ===== */
+.nav-group {
+  width: 100%;
+}
+
+.nav-group-title {
+  position: relative;
+}
+
+.nav-chevron {
+  margin-left: auto;
+  font-size: 13px;
+  opacity: 0.8;
+  transition: transform 0.2s ease;
+}
+
+.nav-submenu {
+  display: none;
+  margin: 4px 0 8px 0;
+  padding-left: 18px;
+}
+
+.nav-group:hover .nav-submenu,
+.nav-group.is-open .nav-submenu {
+  display: block;
+}
+
+.nav-group:hover .nav-chevron,
+.nav-group.is-open .nav-chevron {
+  transform: rotate(180deg);
+}
+
+.nav-sub-btn {
+  font-size: 14px;
+  padding-left: 18px !important;
+  margin-top: 4px;
+  opacity: 0.96;
+}
+
+.nav-sub-btn span:first-child {
+  width: 22px;
+  display: inline-block;
+}
+
+.nav-group.has-active .nav-group-title {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* =========================
+   SIDEBAR EXPAND ON HOVER
+========================= */
+
+.sidebar {
+  width: 84px;
+  transition: width 0.25s ease;
+  overflow-x: hidden;
+}
+
+.sidebar:hover {
+  width: 290px;
+}
+
+/* โลโก้/ชื่อระบบ */
+.sidebar-brand,
+.sidebar-userbox,
+.sidebar-footer {
+  overflow: hidden;
+}
+
+.brand-text,
+.user-text,
+.nav-label,
+.nav-caret {
+  opacity: 0;
+  visibility: hidden;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar:hover .brand-text,
+.sidebar:hover .user-text,
+.sidebar:hover .nav-label,
+.sidebar:hover .nav-caret {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ปุ่มเมนู */
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  border-radius: 14px;
+  padding: 14px 16px;
+  text-align: left;
+  transition: all 0.2s ease;
+  justify-content: center;
+}
+
+.sidebar:hover .nav-btn {
+  justify-content: flex-start;
+}
+
+.nav-icon {
+  min-width: 24px;
+  text-align: center;
+  font-size: 18px;
+}
+
+.nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* เมนูย่อย */
+.nav-group {
+  width: 100%;
+}
+
+.nav-submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+  padding-left: 0;
+}
+
+.nav-group.is-open .nav-submenu {
+  max-height: 180px;
+}
+
+.nav-sub-btn {
+  padding-left: 16px;
+}
+
+.sidebar:hover .nav-sub-btn {
+  padding-left: 42px;
+}
+
+/* ตอนยังไม่ hover ไม่ต้องโชว์เมนูย่อย */
+.sidebar:not(:hover) .nav-submenu {
+  max-height: 0 !important;
+}
+
+/* ปุ่ม active */
+.nav-btn.active {
+  background: rgba(255,255,255,0.16);
+}
+
+/* กลุ่มที่มี active */
+.nav-group.has-active > .nav-group-toggle {
+  background: rgba(255,255,255,0.12);
+}
+
+/* user box */
+.sidebar-userbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.user-avatar {
+  min-width: 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+/* brand */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+}
+
+.brand-icon {
+  min-width: 52px;
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+}
+
+/* Desktop only */
+@media (max-width: 991.98px) {
+  .sidebar {
+    width: 280px !important;
+  }
+
+  .brand-text,
+  .user-text,
+  .nav-label,
+  .nav-caret {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .nav-btn {
+    justify-content: flex-start !important;
+  }
+
+  .sidebar:not(:hover) .nav-submenu {
+    max-height: none !important;
+  }
+}
+
+    /* ======================================================
+   FINAL FIX: Sidebar Expand on Hover for CNMI Donor
+   วางท้ายสุดเพื่อ override CSS เดิมทั้งหมด
+====================================================== */
+
+:root {
+  --sidebar-collapsed-width: 76px;
+  --sidebar-expanded-width: 300px;
+}
+
+/* ===== Desktop: default collapsed ===== */
+@media (min-width: 769px) {
+  .app-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: var(--sidebar-collapsed-width) !important;
+    min-width: var(--sidebar-collapsed-width) !important;
+    max-width: var(--sidebar-collapsed-width) !important;
+    flex: 0 0 var(--sidebar-collapsed-width) !important;
+    transition:
+      width 0.25s ease,
+      min-width 0.25s ease,
+      max-width 0.25s ease,
+      flex-basis 0.25s ease !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  .sidebar:hover {
+    width: var(--sidebar-expanded-width) !important;
+    min-width: var(--sidebar-expanded-width) !important;
+    max-width: var(--sidebar-expanded-width) !important;
+    flex-basis: var(--sidebar-expanded-width) !important;
+  }
+
+  .app-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* ===== Brand / Logo ===== */
+  .sidebar-brand {
+    justify-content: center !important;
+    padding: 20px 10px !important;
+    gap: 12px !important;
+  }
+
+  .sidebar:hover .sidebar-brand {
+    justify-content: flex-start !important;
+    padding: 24px 22px 18px 22px !important;
+  }
+
+  .sidebar-logo {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 42px !important;
+    border-radius: 14px !important;
+    font-size: 22px !important;
+  }
+
+  .sidebar:hover .sidebar-logo {
+    width: 56px !important;
+    min-width: 56px !important;
+    height: 56px !important;
+    border-radius: 18px !important;
+    font-size: 30px !important;
+  }
+
+  .sidebar-title,
+  .sidebar-subtitle,
+  .brand-text {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    transition: opacity 0.18s ease;
+  }
+
+  .sidebar:hover .sidebar-title,
+  .sidebar:hover .sidebar-subtitle,
+  .sidebar:hover .brand-text {
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: auto !important;
+    max-width: 220px !important;
+    overflow: visible !important;
+  }
+
+  /* ===== Nav button collapsed ===== */
+  .sidebar-nav {
+    padding: 14px 10px !important;
+  }
+
+  .nav-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-height: 52px !important;
+    padding: 12px 0 !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+  }
+
+  .sidebar:hover .nav-btn {
+    justify-content: flex-start !important;
+    padding: 12px 16px !important;
+  }
+
+  .nav-icon,
+  .nav-btn > span:first-child {
+    width: 28px !important;
+    min-width: 28px !important;
+    text-align: center !important;
+    font-size: 20px !important;
+    line-height: 1 !important;
+  }
+
+  /* ซ่อน label ของเมนูตอน sidebar หุบ */
+  .nav-label,
+  .nav-caret,
+  .nav-chevron,
+  .nav-btn > span:not(:first-child) {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    transition: opacity 0.18s ease;
+  }
+
+  .sidebar:hover .nav-label,
+  .sidebar:hover .nav-caret,
+  .sidebar:hover .nav-chevron,
+  .sidebar:hover .nav-btn > span:not(:first-child) {
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: auto !important;
+    max-width: 220px !important;
+    overflow: visible !important;
+  }
+
+  .nav-caret,
+  .nav-chevron {
+    margin-left: auto !important;
+  }
+
+  /* ===== Submenu ===== */
+  .nav-group {
+    width: 100% !important;
+  }
+
+  .nav-submenu {
+    display: block !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    padding-left: 0 !important;
+    margin: 0 !important;
+    transition: max-height 0.22s ease !important;
+  }
+
+  /* ตอน hover sidebar แล้ว hover group หรือ group active ค่อยโชว์ submenu */
+  .sidebar:hover .nav-group:hover .nav-submenu,
+  .sidebar:hover .nav-group.is-open .nav-submenu,
+  .sidebar:hover .nav-group.has-active .nav-submenu {
+    max-height: 180px !important;
+    margin: 4px 0 8px 0 !important;
+  }
+
+  .nav-sub-btn {
+    font-size: 14px !important;
+    min-height: 44px !important;
+    padding-left: 40px !important;
+  }
+
+  .sidebar:hover .nav-sub-btn {
+    padding-left: 42px !important;
+  }
+
+  .nav-group.has-active > .nav-group-toggle,
+  .nav-group.has-active > .nav-group-title {
+    background: rgba(255, 255, 255, 0.12) !important;
+  }
+
+  /* ===== User footer ===== */
+  .sidebar-footer {
+    padding: 14px 10px !important;
+    overflow: hidden !important;
+  }
+
+  .sidebar-userbox,
+  .user-card {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .sidebar:hover .sidebar-userbox,
+  .sidebar:hover .user-card {
+    justify-content: flex-start !important;
+  }
+
+  .user-avatar {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 42px !important;
+  }
+
+  .user-text,
+  .user-name,
+  .user-role {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+  }
+
+  .sidebar:hover .user-text,
+  .sidebar:hover .user-name,
+  .sidebar:hover .user-role {
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: auto !important;
+    max-width: 220px !important;
+    overflow: visible !important;
+  }
+
+  .logout-btn {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  .sidebar:not(:hover) .logout-btn {
+    font-size: 0 !important;
+    padding: 12px 0 !important;
+  }
+
+  .sidebar:not(:hover) .logout-btn::before {
+    content: "↪";
+    font-size: 20px;
+  }
+
+  .sidebar:hover .logout-btn {
+    font-size: 16px !important;
+  }
+}
+
+/* ===== Mobile: ใช้ sidebar แบบเดิม ไม่ใช้ hover ===== */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 310px !important;
+    min-width: 310px !important;
+    max-width: 310px !important;
+    flex-basis: 310px !important;
+  }
+
+  .sidebar-title,
+  .sidebar-subtitle,
+  .brand-text,
+  .user-text,
+  .user-name,
+  .user-role,
+  .nav-label,
+  .nav-caret,
+  .nav-chevron,
+  .nav-btn > span:not(:first-child) {
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: auto !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+
+  .nav-btn {
+    justify-content: flex-start !important;
+    padding: 14px 16px !important;
+  }
+}
+    
+
+    .connection-pill { display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border-radius:999px; font-size:13px; font-weight:700; border:1px solid; }
+    .connection-pill.online { background:#eef7ff; color:#185abc; border-color:#b8dafc; }
+    .connection-pill.offline { background:#e9f8ef; color:#157347; border-color:#a7dfbd; }
+    .security-banner { background:linear-gradient(135deg,#eaf4ff,#f7fbff); border:1px solid #b8dafc; border-radius:16px; padding:14px 16px; margin-bottom:16px; }
+    .smartcard-box { background:#f6fbff; border:1px dashed #8fc7f4; border-radius:14px; padding:10px; }
+    .mission-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .mission-card { background:#fff; border:1px solid var(--cnmi-blue-border); border-radius:18px; padding:18px; box-shadow:0 8px 20px rgba(47,128,237,.06); }
+    .mission-card h4 { color:var(--cnmi-blue-dark); font-weight:700; }
+    .danger-zone { border-color:#f1b8bd; background:#fffafa; }
+    @media (max-width: 850px) { .mission-grid { grid-template-columns:1fr; } }
+
+  </style>
+</head>
+
+<body>
+  <div class="login-screen" id="login-screen">
+    <div class="login-card">
+      <div class="login-logo"><img src="assets/icons/android-chrome-192x192.png" alt="CNMI Donor App Icon" class="login-logo-img"></div>
+
+      <div class="login-title">CNMI Donor</div>
+      <div class="login-subtitle">Blood Donation System</div>
+
+      <div class="login-note">
+        <strong>ใช้งานครั้งแรกบนเครื่องนี้:</strong> ใส่ชื่อผู้ใช้ที่ต้องการ และตั้งรหัสผ่านอย่างน้อย 8 ตัวอักษร ระบบจะสร้างคลังข้อมูลเข้ารหัสบนเครื่องนี้ทันที<br>
+        หลังจากนั้นต้องใช้ชื่อผู้ใช้และรหัสผ่านเดิมเพื่อเปิดข้อมูล Offline
+      </div>
+
+      <div class="login-error" id="login-error"></div>
+
+      <div class="mb-3">
+        <label class="fw-bold">Username / รหัสพนักงาน</label>
+        <input type="text" id="login-username" class="form-control form-control-lg" placeholder="เช่น 012345">
+      </div>
+
+      <div class="mb-3">
+        <label class="fw-bold">รหัสผ่าน</label>
+        <input type="password" id="login-password" class="form-control form-control-lg" placeholder="ใส่รหัสผ่าน">
+      </div>
+
+      <button id="login-btn" class="btn btn-primary btn-lg w-100 mb-3" onclick="login()">↪ เข้าสู่ระบบ</button>
+
+      <div class="text-center">
+        <span class="small text-muted">ข้อมูลถูกเข้ารหัสในเครื่อง หากลืมรหัสผ่านจะเปิดข้อมูลเดิมไม่ได้</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-layout auth-hidden" id="app-layout">
+    
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-logo"><img src="assets/icons/android-chrome-192x192.png" alt="CNMI Donor App Icon" class="sidebar-logo-img"></div>
+        <div class="brand-text">
+          <div class="fw-bold">CNMI Blood Mobile</div>
+           <div class="small">Offline Secure PWA</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-btn active" data-page="dashboard" data-roles="admin,sup_manager,manager,staff,physician" onclick="showPage('dashboard')">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Dashboard</span>
+        </button>
+
+        <button class="nav-btn" data-page="register" data-roles="admin,sup_manager,manager,staff" onclick="showPage('register')">
+          <span class="nav-icon">📝</span>
+          <span class="nav-label">ลงทะเบียนผู้บริจาค</span>
+        </button>
+
+        <button class="nav-btn" data-page="mission" data-roles="admin,sup_manager,manager,staff" onclick="showPage('mission')">
+          <span class="nav-icon">🧳</span>
+          <span class="nav-label">เตรียมออกหน่วย / ส่งออก LIS</span>
+        </button>
+
+        <button class="nav-btn" data-page="print-a4" data-roles="admin,sup_manager,manager,staff" onclick="showPage('print-a4')">
+          <span class="nav-icon">📄</span>
+          <span class="nav-label">พิมพ์ใบสมัคร</span>
+        </button>
+
+        <button class="nav-btn" data-page="today" data-roles="admin,sup_manager,manager,staff,physician" onclick="showPage('today')">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">รายชื่อผู้บริจาควันนี้</span>
+        </button>
+
+        <button class="nav-btn" data-page="screening" data-roles="admin,sup_manager,manager,staff" onclick="showPage('screening')">
+          <span class="nav-icon">🩺</span>
+          <span class="nav-label">คัดกรองผู้บริจาค</span>
+        </button>
+
+        <button class="nav-btn" data-page="sticker" data-roles="admin,sup_manager,manager,staff" onclick="showPage('sticker')">
+          <span class="nav-icon">🏷️</span>
+          <span class="nav-label">พิมพ์สติ๊กเกอร์</span>
+        </button>
+
+        <button class="nav-btn" data-page="certificate" data-roles="admin,sup_manager,manager,staff,physician" onclick="showPage('certificate')">
+          <span class="nav-icon">📜</span>
+          <span class="nav-label">หนังสือรับรอง</span>
+        </button>
+
+        <div class="nav-group" id="settings-group">
+          <button class="nav-group-toggle nav-btn" type="button" onclick="toggleNavGroup('settings-group')">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Users / Settings</span>
+            <span class="nav-caret">▾</span>
+          </button>
+
+          <div class="nav-submenu">
+            <button class="nav-btn nav-sub-btn" data-page="settings" onclick="showPage('settings')">
+              <span class="nav-icon">👥</span>
+              <span class="nav-label">Settings / Users</span>
+            </button>
+
+            <button class="nav-btn nav-sub-btn" data-page="audit-logs" onclick="showPage('audit-logs')">
+              <span class="nav-icon">🧾</span>
+              <span class="nav-label">AuditLog Viewer</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-userbox">
+          <div class="user-avatar">👤</div>
+          <div class="user-text">
+            <div class="user-name" id="sidebar-user-name">-</div>
+            <div class="user-role" id="sidebar-user-role">-</div>
+          </div>
+        </div>
+
+        <button class="logout-btn" onclick="logout()">↪ ออกจากระบบ</button>
+      </div>
+    </aside>
+
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+    <main class="app-main">
+      <div class="mobile-header">
+        <div>
+          <div class="app-title">CNMI Blood Mobile</div>
+          <div class="app-subtitle">Offline Secure PWA</div>
+        </div>
+        <button class="mobile-menu-btn" onclick="openSidebar()">☰</button>
+      </div>
+
+      <div class="d-flex justify-content-end mb-2"><span id="connection-status" class="connection-pill online">กำลังตรวจสอบ...</span></div>
+
+      <section class="page-section active" id="page-dashboard">
+        <div class="page-title-card">
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-desc">ภาพรวมระบบรับบริจาคโลหิต</p>
+        </div>
+
+        <div class="security-banner">
+          <strong>โหมด Offline Secure:</strong> ข้อมูลผู้บริจาคบันทึกในอุปกรณ์นี้แบบเข้ารหัส ไม่ส่งไป Google Sheets หรือ GitHub ระหว่างออกหน่วย
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="dashboard-card">
+            <div class="dashboard-card-label">ผู้บริจาควันนี้</div>
+            <div class="dashboard-card-value" id="dash-total">-</div>
+          </div>
+
+          <div class="dashboard-card">
+            <div class="dashboard-card-label">ผ่านคัดกรอง</div>
+            <div class="dashboard-card-value" id="dash-pass">-</div>
+          </div>
+
+          <div class="dashboard-card">
+            <div class="dashboard-card-label">ไม่ผ่าน</div>
+            <div class="dashboard-card-value" id="dash-fail">-</div>
+          </div>
+
+          <div class="dashboard-card">
+            <div class="dashboard-card-label">รอคัดกรอง</div>
+            <div class="dashboard-card-value" id="dash-pending">-</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section" id="page-register">
+        <div class="page-title-card">
+          <h1 class="page-title">ลงทะเบียนผู้บริจาค</h1>
+          <p class="page-desc">บันทึกข้อมูลผู้บริจาคและพิมพ์ใบสมัคร</p>
+        </div>
+
+        <div class="container-fluid px-0">
+          <div class="main-card">
+            <h2 class="header-title">🩸 ลงทะเบียนผู้บริจาคโลหิต</h2>
+
+      <div class="row g-3">
+        <div class="col-md-12">
+          <label class="fw-bold">เลขบัตรประชาชน</label>
+          <div class="smartcard-box">
+            <div class="input-group input-group-lg">
+              <input type="text" id="id_card" class="form-control" inputmode="numeric" maxlength="13" autofocus>
+              <button id="smartcard-read-btn" class="btn btn-primary" type="button" onclick="readThaiIdCard()">💳 อ่านบัตรประชาชน</button>
+            </div>
+            <div id="card-read-status" class="small fw-bold text-muted mt-1">รองรับ uTrust 2700R ผ่าน Smart Card Bridge บน Windows</div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <label>คำนำหน้า</label>
+          <input type="text" id="prefix" class="form-control">
+        </div>
+
+        <div class="col-md-5">
+          <label>ชื่อ</label>
+          <input type="text" id="fname" class="form-control">
+        </div>
+
+        <div class="col-md-5">
+          <label>นามสกุล</label>
+          <input type="text" id="lname" class="form-control">
+        </div>
+
+        <div class="col-md-6">
+          <label>วันเกิด (วว-ดด-ปปปป พ.ศ.)</label>
+          <input type="text" id="birth_date" class="form-control" placeholder="เช่น 31-12-2530">
+        </div>
+
+        <div class="col-md-6">
+          <label>เพศ</label>
+          <input type="text" id="gender" class="form-control">
+        </div>
+
+        <div class="col-md-8">
+          <label>ที่อยู่</label>
+          <textarea id="address" class="form-control" rows="2"></textarea>
+        </div>
+
+        <div class="col-md-4">
+          <label>เบอร์โทร</label>
+          <input type="text" id="phone" class="form-control" placeholder="เช่น 0812345678">
+        </div>
+
+        <div class="col-md-12 mt-3">
+          <div class="d-flex gap-2">
+            <button id="save-btn" class="btn btn-danger btn-lg flex-grow-1" onclick="saveData()">✅ บันทึกและพิมพ์ใบสมัคร A4</button>
+            <button class="btn btn-outline-secondary btn-lg" onclick="clearForm()">🧹 ล้างข้อมูล</button>
+          </div>
+        </div>
+                </div>
+        </div>
+      </section>
+
+      <section class="page-section" id="page-today">
+  <div class="page-title-card">
+    <h1 class="page-title">รายชื่อผู้บริจาควันนี้</h1>
+    <p class="page-desc">ค้นหา DN ดูสถานะ และเลือกเมนูที่เกี่ยวข้อง</p>
+  </div>
+
+  <div class="container-fluid px-0" id="table-mount-today">
+    <div class="main-card" id="visit-table-card">
+      <div class="row g-2 align-items-center mb-3">
+        <div class="col-auto">
+          <h4 class="text-primary fw-bold m-0" id="visit-table-title">📋 รายชื่อผู้บริจาควันนี้</h4>
+        </div>
+
+        <div class="col-auto ms-auto d-flex gap-2 align-items-center">
+          <input type="text" id="dn-search" class="form-control form-control-sm" placeholder="ค้นหา DN" style="width: 170px;">
+          <input type="date" id="table-date" class="form-control form-control-sm" style="width: 170px;">
+          <button id="search-btn" class="btn btn-primary btn-sm" onclick="loadTable()">🔍 ค้นหา</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th style="width:70px;">ลำดับ</th>
+              <th>DN</th>
+              <th>ชื่อ-นามสกุล</th>
+              <th>สถานะ</th>
+              <th>เลขถุง</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="visit-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+      <section class="page-section" id="page-print-a4">
+        <div class="page-title-card">
+          <h1 class="page-title">พิมพ์ใบสมัคร</h1>
+          <p class="page-desc">เลือกผู้บริจาคจากรายชื่อวันนี้ แล้วกดปุ่มพิมพ์ใบสมัคร</p>
+        </div>
+
+        <div class="container-fluid px-0" id="table-mount-print-a4"></div>
+      </section>
+
+      <section class="page-section" id="page-screening">
+        <div class="page-title-card">
+          <h1 class="page-title">คัดกรองผู้บริจาค</h1>
+          <p class="page-desc">เลือก DN จากรายชื่อวันนี้ แล้วกดปุ่มลงผลคัดกรอง</p>
+        </div>
+
+        <div class="container-fluid px-0" id="table-mount-screening"></div>
+      </section>
+
+      <section class="page-section" id="page-sticker">
+        <div class="page-title-card">
+          <h1 class="page-title">พิมพ์สติ๊กเกอร์</h1>
+          <p class="page-desc">เลือกผู้บริจาคที่มีเลขถุงแล้วจากรายชื่อวันนี้</p>
+        </div>
+
+        <div class="container-fluid px-0" id="table-mount-sticker"></div>
+      </section>
+
+      <section class="page-section" id="page-certificate">
+        <div class="page-title-card">
+          <h1 class="page-title">หนังสือรับรอง</h1>
+          <p class="page-desc">ออกเลขและพิมพ์หนังสือรับรองการบริจาคโลหิต</p>
+        </div>
+
+        <div class="container-fluid px-0" id="table-mount-certificate"></div>
+      </section>
+
+
+      <section class="page-section" id="page-mission">
+        <div class="page-title-card">
+          <h1 class="page-title">เตรียมออกหน่วย / ส่งออก LIS</h1>
+          <p class="page-desc">ตั้งช่วงเลขถุง นำเข้าประวัติผู้บริจาค ตรวจเครื่องอ่านบัตร และส่งออกข้อมูลกลับเข้าโรงพยาบาล</p>
+        </div>
+
+        <div class="mission-grid">
+          <div class="mission-card">
+            <h4>1. ตั้งค่างานออกหน่วย</h4>
+            <div class="mb-3">
+              <label class="fw-bold">ชื่องาน / สถานที่</label>
+              <input id="mission-name" class="form-control" placeholder="เช่น หน่วยรับบริจาคโลหิต บริษัท ABC">
+            </div>
+            <div class="row g-2">
+              <div class="col-md-6"><label class="fw-bold">เลขถุงเริ่มต้น</label><input id="bag-start" class="form-control" inputmode="numeric" placeholder="เช่น 6910001"></div>
+              <div class="col-md-6"><label class="fw-bold">เลขถุงสิ้นสุด</label><input id="bag-end" class="form-control" inputmode="numeric" placeholder="เช่น 6910100"></div>
+            </div>
+            <div id="bag-range-status" class="small fw-bold text-danger mt-2">ยังไม่ได้ตั้งช่วงเลขถุง</div>
+            <button class="btn btn-primary mt-3" onclick="saveMissionSettings()">บันทึกงานและช่วงเลขถุง</button>
+          </div>
+
+          <div class="mission-card">
+            <h4>2. เครื่องอ่านบัตรประชาชน</h4>
+            <p class="text-muted">เสียบเครื่อง uTrust 2700R แล้วเปิด <code>smartcard-bridge/Start-Bridge.cmd</code> บนคอมพิวเตอร์ Windows</p>
+            <div id="bridge-status" class="small fw-bold text-muted mb-3">ยังไม่ได้ตรวจสอบ</div>
+            <button class="btn btn-outline-primary" onclick="checkSmartCardBridge()">ตรวจสอบเครื่องอ่านบัตร</button>
+          </div>
+
+          <div class="mission-card">
+            <h4>3. นำเข้าประวัติผู้บริจาค</h4>
+            <p class="text-muted">รองรับไฟล์ Excel หรือ CSV โดยเลือกชีต Donors อัตโนมัติ ข้อมูลจะถูกเข้ารหัสและเก็บเฉพาะในเครื่องนี้</p>
+            <input id="donor-import-file" type="file" class="form-control" accept=".xlsx,.xls,.csv">
+            <div id="import-status" class="small fw-bold text-muted mt-2"></div>
+            <button class="btn btn-outline-primary mt-3" onclick="importDonorHistory()">นำเข้าข้อมูล</button>
+          </div>
+
+          <div class="mission-card">
+            <h4>4. ส่งออกเพื่อกลับเข้า LIS</h4>
+            <p class="text-muted">LIS ไม่มี Import จึงเตรียมทั้ง CSV และเครื่องมือช่วยกรอกทีละรายในโฟลเดอร์ <code>lis-assistant</code></p>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn btn-primary" onclick="exportLisCsv()">ส่งออก LIS CSV</button>
+              <button class="btn btn-outline-primary" onclick="copyLisRow()">คัดลอกข้อมูล 1 ราย</button>
+              <button class="btn btn-outline-secondary" onclick="exportEncryptedBackup()">Backup เข้ารหัส</button>
+            </div>
+          </div>
+
+          <div class="mission-card danger-zone" style="grid-column:1/-1;">
+            <h4 class="text-danger">5. ปิดงานและล้างข้อมูลจากอุปกรณ์</h4>
+            <p class="text-muted">ทำหลังตรวจสอบว่า Export และนำเข้าระบบหลักเรียบร้อยแล้วเท่านั้น</p>
+            <button class="btn btn-outline-danger" onclick="clearMissionData()">ล้างข้อมูลภารกิจจากเครื่องนี้</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section" id="page-settings">
+  <div class="page-title-card">
+    <h1 class="page-title">Users / Settings</h1>
+    <p class="page-desc">จัดการผู้ใช้งานระบบและตรวจสอบสถานะบัญชี</p>
+  </div>
+
+  <div class="main-card">
+    <div class="d-flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
+      <h4 class="text-primary fw-bold m-0">⚙️ รายชื่อผู้ใช้งานระบบ</h4>
+      <button id="users-refresh-btn" class="btn btn-primary btn-sm" onclick="loadUsersSettings()">🔄 โหลดรายชื่อ</button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Username</th>
+            <th>ชื่อ-นามสกุล</th>
+            <th>Role</th>
+            <th>Position</th>
+            <th>Approval</th>
+            <th>Active</th>
+            <th>First Login</th>
+            <th>Email</th>
+            <th>Last Login</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="users-table-body">
+          <tr>
+            <td colspan="10" class="text-center text-muted">กดโหลดรายชื่อผู้ใช้งาน</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    </div>
+</section>
+
+<section class="page-section" id="page-audit-logs">
+  <div class="page-title-card">
+    <h1 class="page-title">AuditLog Viewer</h1>
+    <p class="page-desc">ดูประวัติการใช้งานระบบย้อนหลัง</p>
+  </div>
+
+  <div class="main-card">
+    <div class="d-flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
+      <div>
+        <h4 class="text-primary fw-bold m-0">🧾 AuditLog Viewer</h4>
+        <div class="text-muted small">คลิกที่แถวเพื่อดูรายละเอียดเต็ม</div>
+      </div>
+
+      <button id="audit-refresh-btn" class="btn btn-primary btn-sm" onclick="loadAuditLogs()">🔄 โหลด AuditLog</button>
+    </div>
+
+    <div class="row g-2 mb-3">
+      <div class="col-md-3">
+        <label class="small fw-bold">วันที่</label>
+        <input type="date" id="audit-date" class="form-control form-control-sm">
+      </div>
+
+      <div class="col-md-3">
+        <label class="small fw-bold">Username</label>
+        <input type="text" id="audit-username" class="form-control form-control-sm" placeholder="เช่น 020305">
+      </div>
+
+      <div class="col-md-3">
+        <label class="small fw-bold">Action</label>
+        <input type="text" id="audit-action" class="form-control form-control-sm" placeholder="เช่น LOGIN, PRINT, SCREENING">
+      </div>
+
+      <div class="col-md-3">
+        <label class="small fw-bold">จำนวนรายการ</label>
+        <select id="audit-limit" class="form-select form-select-sm">
+          <option value="50">50 รายการล่าสุด</option>
+          <option value="100" selected>100 รายการล่าสุด</option>
+          <option value="200">200 รายการล่าสุด</option>
+          <option value="300">300 รายการล่าสุด</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-3 flex-wrap">
+      <button class="btn btn-outline-primary btn-sm" onclick="loadAuditLogs()">🔍 ค้นหา</button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="clearAuditFilters()">ล้างตัวกรอง</button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>เวลา</th>
+            <th>Username</th>
+            <th>ชื่อ</th>
+            <th>Role</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th>รายละเอียด</th>
+          </tr>
+        </thead>
+        <tbody id="audit-log-table-body">
+          <tr>
+            <td colspan="7" class="text-center text-muted">กดโหลด AuditLog</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+      
+    </main>
+  </div>
+
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 20px; overflow: hidden;">
+      <div class="modal-body text-center p-4">
+        <div style="
+          width:72px;
+          height:72px;
+          border-radius:50%;
+          background:#e8f8ef;
+          color:#198754;
+          display:grid;
+          place-items:center;
+          font-size:38px;
+          margin:0 auto 16px auto;
+        ">
+          ✅
+        </div>
+
+        <h4 id="success-title" class="fw-bold mb-2">สำเร็จ</h4>
+        <p id="success-message" class="text-muted mb-4">ดำเนินการสำเร็จ</p>
+
+        <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">
+          ตกลง
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    <div class="modal fade" id="auditDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius: 18px; overflow: hidden;">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">🧾 รายละเอียด AuditLog</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="detail-label">เวลา</div>
+            <div id="audit-detail-time" class="detail-value"></div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="detail-label">Username</div>
+            <div id="audit-detail-username" class="detail-value"></div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="detail-label">Role</div>
+            <div id="audit-detail-role" class="detail-value"></div>
+          </div>
+
+          <div class="col-md-12">
+            <div class="detail-label">ชื่อผู้ใช้งาน</div>
+            <div id="audit-detail-fullname" class="detail-value"></div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="detail-label">Action</div>
+            <div id="audit-detail-action" class="detail-value"></div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="detail-label">Target Type</div>
+            <div id="audit-detail-target-type" class="detail-value"></div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="detail-label">Target ID</div>
+            <div id="audit-detail-target-id" class="detail-value"></div>
+          </div>
+
+          <div class="col-md-12">
+            <div class="detail-label">รายละเอียด</div>
+            <div id="audit-detail-detail" class="detail-box"></div>
+          </div>
+
+          <div class="col-md-12">
+            <div class="detail-label">User Agent</div>
+            <div id="audit-detail-useragent" class="detail-box small text-muted" style="word-break: break-word;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 20px; overflow: hidden;">
+      <div class="modal-body text-center p-4">
+        <div style="
+          width:72px;
+          height:72px;
+          border-radius:50%;
+          background:#fff7e6;
+          color:#d99a00;
+          display:grid;
+          place-items:center;
+          font-size:38px;
+          margin:0 auto 16px auto;
+        ">
+          ⚠️
+        </div>
+
+        <h4 id="confirm-title" class="fw-bold mb-2">ยืนยันการทำรายการ</h4>
+        <p id="confirm-message" class="text-muted mb-4" style="white-space: pre-line;">
+          กรุณายืนยัน
+        </p>
+
+        <div class="d-flex gap-2 justify-content-center">
+          <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+            ยกเลิก
+          </button>
+          <button type="button" class="btn btn-warning px-4" id="confirm-ok-btn">
+            ยืนยัน
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+     <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">🔐 เปลี่ยนรหัสผ่านครั้งแรก</h5>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert-info">
+          เพื่อความปลอดภัย กรุณาเปลี่ยนรหัสผ่านก่อนเริ่มใช้งานระบบ<br>
+          รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร และมีตัวพิมพ์เล็ก ตัวพิมพ์ใหญ่ และตัวเลข
+        </div>
+
+        <div class="mb-3">
+          <label class="fw-bold">รหัสผ่านเดิม</label>
+          <input type="password" id="change-current-password" class="form-control" placeholder="รหัสผ่านเดิม">
+        </div>
+
+        <div class="mb-3">
+          <label class="fw-bold">รหัสผ่านใหม่</label>
+          <input type="password" id="change-new-password" class="form-control" placeholder="เช่น Bloodbank2026">
+        </div>
+
+        <div class="mb-3">
+          <label class="fw-bold">ยืนยันรหัสผ่านใหม่</label>
+          <input type="password" id="change-confirm-password" class="form-control" placeholder="ใส่ซ้ำอีกครั้ง">
+        </div>
+
+        <div class="text-danger fw-bold" id="change-password-error" style="display:none;"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="change-password-btn" class="btn btn-primary w-100" onclick="submitChangePassword()">บันทึกรหัสผ่านใหม่</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title">🔑 ลืมรหัสผ่าน</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert-info">
+          กรอก Username ระบบจะส่งรหัส OTP ไปยังอีเมลมหิดลที่ลงทะเบียนไว้ในชีต Users
+        </div>
+
+        <div class="mb-3">
+          <label class="fw-bold">Username / รหัสพนักงาน</label>
+          <input type="text" id="forgot-username" class="form-control" placeholder="เช่น 020305">
+        </div>
+
+        <button id="forgot-send-btn" class="btn btn-primary w-100 mb-3" onclick="sendForgotPasswordOtp()">ส่งรหัส OTP ไปที่อีเมล</button>
+
+        <hr>
+
+        <div class="mb-3">
+          <label class="fw-bold">รหัส OTP</label>
+          <input type="text" id="forgot-otp" class="form-control" placeholder="รหัส 6 หลักจากอีเมล">
+        </div>
+
+        <div class="mb-3">
+          <label class="fw-bold">รหัสผ่านใหม่</label>
+          <input type="password" id="forgot-new-password" class="form-control" placeholder="เช่น Bloodbank2026">
+        </div>
+
+        <div class="mb-3">
+          <label class="fw-bold">ยืนยันรหัสผ่านใหม่</label>
+          <input type="password" id="forgot-confirm-password" class="form-control" placeholder="ใส่ซ้ำอีกครั้ง">
+        </div>
+
+        <div id="forgot-message" class="fw-bold" style="display:none;"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="forgot-reset-btn" class="btn btn-success w-100" onclick="resetPasswordWithOtp()">ตั้งรหัสผ่านใหม่</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    <div class="modal fade" id="visitDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius: 18px; overflow: hidden;">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title">📋 รายละเอียดผู้บริจาค / ผลคัดกรองเบื้องต้น</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="detail-box mb-3">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="detail-label">DN</div>
+              <div id="vd-dn" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">เลขถุง</div>
+              <div id="vd-bag" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">สถานะ</div>
+              <div id="vd-status" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="detail-label">ชื่อ-นามสกุล</div>
+              <div id="vd-name" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">วันเกิด</div>
+              <div id="vd-birth" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">เพศ</div>
+              <div id="vd-gender" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">เบอร์โทร</div>
+              <div id="vd-phone" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">หมู่เลือด</div>
+              <div id="vd-group" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">ประเภท</div>
+              <div id="vd-type" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">น้ำหนัก</div>
+              <div id="vd-weight" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">Hb</div>
+              <div id="vd-hb" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">BP</div>
+              <div id="vd-bp" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">Pulse</div>
+              <div id="vd-pulse" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="detail-label">Temp</div>
+              <div id="vd-temp" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="detail-label">ที่อยู่</div>
+              <div id="vd-address" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="detail-label">เวลาบันทึกผลคัดกรอง</div>
+              <div id="vd-save-time" class="detail-value"></div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="detail-label">สรุปเหตุผล</div>
+              <div id="vd-reason" class="detail-value"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+  <div class="modal fade" id="screeningModal" tabindex="-1" aria-hidden="true">
+    
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-warning">
+          <h5 class="modal-title">🩺 คัดกรอง: <span id="modal-name"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" id="modal-dn">
+          <input type="hidden" id="modal-row-json">
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label>ประเภท</label>
+              <select id="sc-type" class="form-select" required>
+                <option value="" selected>-- กรุณาเลือก Type ผู้บริจาค --</option>
+                <option value="New">รายใหม่ (New)</option>
+                <option value="Recent">ประจำ (Recent)</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label>หมู่เลือด</label>
+              <select id="sc-group" class="form-select">
+                <option value="-">-</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="O">O</option>
+                <option value="AB">AB</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label>น้ำหนัก</label>
+              <input type="number" id="sc-weight" class="form-control">
+            </div>
+
+            <div class="col-md-4">
+              <label>ความดัน</label>
+              <input type="text" id="sc-bp" class="form-control">
+            </div>
+
+            <div class="col-md-4">
+              <label>ชีพจร</label>
+              <input type="number" id="sc-pulse" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label>อุณหภูมิ</label>
+              <input type="number" step="0.1" id="sc-temp" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label>ความเข้มเลือด</label>
+              <input type="number" step="0.1" id="sc-hb" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label>ผลคัดกรอง</label>
+              <select id="sc-status" class="form-select" onchange="toggleReason()" required>
+                <option value="" selected>-- กรุณาเลือกผลคัดกรอง --</option>
+                <option value="ผ่าน">✅ ผ่าน</option>
+                <option value="ไม่ผ่าน">❌ ไม่ผ่าน</option>
+              </select>
+            </div>
+
+            <div class="col-md-6" id="reason-box" style="display:none;">
+              <label class="text-danger">เหตุผลที่ไม่ผ่าน</label>
+              <input type="text" id="sc-reason" class="form-control border-danger">
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="text-center">
+            <button id="screening-save-btn" class="btn btn-primary btn-lg w-50" onclick="submitScreening()">💾 บันทึก</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="visitDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title">📋 รายละเอียดผู้บริจาค / ผลคัดกรองเบื้องต้น</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="detail-box mb-3">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <div class="detail-label">DN</div>
+                <div id="vd-dn" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="detail-label">เลขถุง</div>
+                <div id="vd-bag" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="detail-label">สถานะ</div>
+                <div id="vd-status" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-12">
+                <div class="detail-label">ชื่อ-นามสกุล</div>
+                <div id="vd-name" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="detail-label">วันเกิด</div>
+                <div id="vd-birth" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="detail-label">เพศ</div>
+                <div id="vd-gender" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="detail-label">หมู่เลือด</div>
+                <div id="vd-group" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="detail-label">ประเภท</div>
+                <div id="vd-type" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="detail-label">น้ำหนัก</div>
+                <div id="vd-weight" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="detail-label">Hb</div>
+                <div id="vd-hb" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="detail-label">BP</div>
+                <div id="vd-bp" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="detail-label">Pulse</div>
+                <div id="vd-pulse" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="detail-label">Temp</div>
+                <div id="vd-temp" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-12">
+                <div class="detail-label">เวลาบันทึกผลคัดกรอง</div>
+                <div id="vd-save-time" class="detail-value"></div>
+              </div>
+
+              <div class="col-md-12">
+                <div class="detail-label">สรุปเหตุผล</div>
+                <div id="vd-reason" class="detail-value"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="a4-template">
+    <div id="p-dn" class="print-data"></div>
+    <svg id="p-barcode" class="print-data"></svg>
+    <div id="p-name" class="print-data"></div>
+    <div id="p-id" class="print-data"></div>
+    <div id="p-birth" class="print-data"></div>
+    <div id="p-age" class="print-data"></div>
+    <div id="p-gender" class="print-data"></div>
+    <div id="p-address" class="print-data"></div>
+  </div>
+
+  <div id="cert-template">
+    <div class="cert-page">
+      <div class="cert-header">
+        <div class="cert-header-top">
+          ธนาคารเลือด (หน่วยเวชศาสตร์บริการโลหิต) โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์<br>
+          คณะแพทยศาสตร์โรงพยาบาลรามาธิบดี มหาวิทยาลัยมหิดล<br>
+          ห้องรับบริจาคโลหิต โทร : 02-839-6116
+        </div>
+        <div class="cert-title">หนังสือรับรองการบริจาคโลหิต</div>
+      </div>
+
+      <div class="cert-row">
+        เลขที่ <span id="c-cert-no" class="cert-line mid">-</span>
+      </div>
+
+      <div class="cert-row">
+        หนังสือรับรองฉบับนี้ให้ไว้เพื่อรับรองว่า
+        <span id="c-name" class="cert-line long">-</span>
+      </div>
+
+      <div class="cert-row">
+        เลขบัตรประชาชน
+        <span id="c-id" class="cert-line mid">-</span>
+        ที่อยู่
+        <span id="c-address" class="cert-line long">-</span>
+      </div>
+
+      <div class="cert-row">
+        ได้มาบริจาคโลหิต ณ หน่วยรับบริจาคโลหิตเคลื่อนที่ โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์
+        คณะแพทยศาสตร์โรงพยาบาลรามาธิบดี มหาวิทยาลัยมหิดล
+        เมื่อวันที่ <span id="c-visit-date" class="cert-line mid">-</span>
+      </div>
+
+      <div class="cert-row">
+        ออกให้เมื่อวันที่ <span id="c-issue-date" class="cert-line mid">-</span>
+      </div>
+
+      <div class="cert-sign-area">
+        <div>ลงชื่อ <span class="cert-sign-line"></span></div>
+        <div style="margin-top:10mm;">(<span id="c-signer-name">.......................................................</span>)</div>
+        <div style="margin-top:6mm;">ตำแหน่ง <span id="c-signer-position">.......................................................</span></div>
+        <div style="margin-top:8mm;" class="cert-muted">
+          หน่วยรับบริจาคโลหิตเคลื่อนที่ โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tsc-template"></div>
+
+  <script>
+    console.log("CNMI Blood Mobile Offline Secure v1.0.0 — TSC TE310 300 dpi");
+    let currentTablePage = "today";
+
+    const GAS_WEB_APP_URL = "OFFLINE_LOCAL_ONLY";
+    const API_TIMEOUT_MS = 30000;
+    const TOKEN_KEY = "cnmi_donor_token";
+    const USER_KEY = "cnmi_donor_user";
+    let currentToken = sessionStorage.getItem(TOKEN_KEY) || "";
+    let currentUser = null;
+
+    function isAuthErrorMessage(message) {
+      const msg = (message || "").toString();
+
+      return (
+        msg.includes("Session หมดอายุ") ||
+        msg.includes("กรุณาเข้าสู่ระบบ")
+      );
+    }
+
+    function isNeedChangePasswordMessage(message) {
+      const msg = (message || "").toString();
+      return msg.includes("กรุณาเปลี่ยนรหัสผ่าน");
+    }
+    
+    function apiCall(action, params = {}) {
+      return window.cnmiOfflineApiCall(action, params);
+    }
+
+    function toggleNavGroup(groupId) {
+      const group = document.getElementById(groupId);
+      if (!group) return;
+
+      group.classList.toggle("is-open");
+    }
+    
+    function setButtonBusy(buttonId, isBusy, busyText) {
+      const btn = document.getElementById(buttonId);
+      if (!btn) return;
+
+      if (isBusy) {
+        btn.dataset.oldText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = busyText || "กำลังทำงาน...";
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = btn.dataset.oldText || btn.innerHTML;
+      }
+    }
+
+    let currentTableMode = "today";
+
+function isTablePage(pageName) {
+  return [
+    "today",
+    "print-a4",
+    "screening",
+    "sticker",
+    "certificate"
+  ].includes(pageName);
+}
+
+function moveVisitTableTo(pageName) {
+  const tableCard = document.getElementById("visit-table-card");
+  if (!tableCard) return;
+
+  const hostMap = {
+    today: "table-mount-today",
+    "print-a4": "table-mount-print-a4",
+    screening: "table-mount-screening",
+    sticker: "table-mount-sticker",
+    certificate: "table-mount-certificate"
+  };
+
+  const hostId = hostMap[pageName];
+  const host = document.getElementById(hostId);
+
+  if (host) {
+    host.appendChild(tableCard);
+  }
+
+  updateVisitTableTitle(pageName);
+}
+
+function updateVisitTableTitle(mode) {
+  const titleMap = {
+    "today": "📋 รายชื่อผู้บริจาควันนี้",
+    "print-a4": "📄 พิมพ์ใบสมัคร",
+    "screening": "🩺 คัดกรองผู้บริจาค",
+    "sticker": "🏷️ พิมพ์สติ๊กเกอร์",
+    "certificate": "📜 หนังสือรับรอง"
+  };
+
+  const titleEl = document.getElementById("visit-table-title");
+  if (titleEl) {
+    titleEl.innerText = titleMap[mode] || titleMap.today;
+  }
+}
+
+function showPage(pageName) {
+  if (!canAccessPage(pageName)) {
+    showSuccessPopup("ไม่มีสิทธิ์เข้าถึง", "บัญชีของคุณไม่มีสิทธิ์ใช้งานเมนูนี้");
+    pageName = getFirstAllowedPage();
+  }
+
+  document.querySelectorAll(".page-section").forEach(section => {
+    section.classList.remove("active");
+  });
+
+  const target = document.getElementById("page-" + pageName);
+  if (target) {
+    target.classList.add("active");
+  }
+
+  document.querySelectorAll(".nav-btn").forEach(btn => {
+    btn.classList.remove("active");
+  });
+
+  document.querySelectorAll(".nav-group").forEach(group => {
+    group.classList.remove("has-active");
+    group.classList.remove("is-open");
+  });
+
+  const activeBtn = document.querySelector('.nav-btn[data-page="' + pageName + '"]');
+
+  if (activeBtn) {
+    activeBtn.classList.add("active");
+
+    const parentGroup = activeBtn.closest(".nav-group");
+    if (parentGroup) {
+      parentGroup.classList.add("has-active");
+      parentGroup.classList.add("is-open");
+    }
+  }
+
+  closeSidebar();
+
+  if (isTablePage(pageName)) {
+  currentTableMode = pageName;
+  moveVisitTableTo(pageName);
+  loadTable();
+}
+
+  if (pageName === "dashboard") {
+    loadTable();
+  }
+
+  if (pageName === "settings") {
+    loadUsersSettings();
+  }
+
+  if (pageName === "audit-logs") {
+    loadAuditLogs();
+  }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function rowIsPending(row) {
+  return !row.status || row.status === "รอคัดกรอง";
+}
+
+function rowHasBag(row) {
+  return row.bag && row.bag !== "" && row.bag !== "-";
+}
+
+function filterByCurrentTableMode(data) {
+  const mode = currentTableMode || "today";
+
+  return (data || []).filter(row => {
+    const status = (row.status || "").toString().trim();
+    const hasBag = rowHasBag(row);
+    const isPending = rowIsPending(row);
+    const isPassed = status === "ผ่าน";
+
+    if (mode === "today") {
+      return true;
+    }
+
+    if (mode === "print-a4") {
+      return true;
+    }
+
+    if (mode === "screening") {
+      return isPending && !hasBag;
+    }
+
+    if (mode === "sticker") {
+      return hasBag;
+    }
+
+    if (mode === "certificate") {
+      return isPassed && hasBag;
+    }
+
+    return true;
+  });
+}
+
+async function logPrintAction(printType, row, extra = {}) {
+  const res = await apiCall("logPrintAction", {
+    data: JSON.stringify({
+      printType: printType,
+      dn: row?.dn || "",
+      bag: row?.bag || "",
+      certNo: extra.certNo || "",
+      name: row?.name || "",
+      userAgent: getUserAgentText()
+    })
+  });
+
+  if (!res || res.status !== "success") {
+    const message = (res && res.message) ? res.message : "บันทึกประวัติการพิมพ์ไม่สำเร็จ";
+    throw new Error(message);
+  }
+
+  return res;
+}
+    
+function buildActionButtons(row, rowStr, disableScreen) {
+  const mode = currentTableMode || "today";
+
+  if (mode === "today") {
+    return `
+      <div class="btn-group">
+        <button class="btn btn-sm action-btn action-btn-edit"
+          onclick="event.stopPropagation(); prepareEdit('${rowStr}')">
+          ✏️ แก้ไขข้อมูล
+        </button>
+      </div>
+    `;
+  }
+
+  if (mode === "print-a4") {
+    return `
+      <div class="btn-group">
+        <button class="btn btn-sm action-btn action-btn-print"
+          onclick="event.stopPropagation(); printA4FromRow('${rowStr}')">
+          📄 พิมพ์ใบสมัคร
+        </button>
+      </div>
+    `;
+  }
+
+  if (mode === "screening") {
+    return `
+      <div class="btn-group">
+        <button class="btn btn-sm action-btn action-btn-screen"
+          onclick="event.stopPropagation(); openScreening('${rowStr}')" ${disableScreen || ""}>
+          🩺 ลงผลคัดกรอง
+        </button>
+      </div>
+    `;
+  }
+
+  if (mode === "sticker") {
+    return `
+      <div class="btn-group">
+        <button class="btn btn-sm action-btn action-btn-sticker"
+          onclick="event.stopPropagation(); reprintTSCFromRow('${rowStr}')">
+          🏷️ พิมพ์สติ๊กเกอร์
+        </button>
+      </div>
+    `;
+  }
+
+  if (mode === "certificate") {
+    return `
+      <div class="btn-group">
+        <button class="btn btn-sm action-btn action-btn-cert"
+          onclick="event.stopPropagation(); printCertificateFromRow('${rowStr}')">
+          📜 พิมพ์ใบรับรอง
+        </button>
+      </div>
+    `;
+  }
+
+  return "-";
+}
+
+function openSidebar() {
+  document.getElementById("sidebar")?.classList.add("open");
+  document.getElementById("sidebar-backdrop")?.classList.add("show");
+}
+
+function closeSidebar() {
+  document.getElementById("sidebar")?.classList.remove("open");
+  document.getElementById("sidebar-backdrop")?.classList.remove("show");
+}
+
+async function logout() {
+  try {
+    if (currentToken) {
+      await apiCall("logout", {
+        data: JSON.stringify({
+          token: currentToken,
+          userAgent: getUserAgentText()
+        })
+      });
+    }
+  } catch (err) {
+    console.error("logout error =", err);
+  }
+
+  clearSession();
+  showLoginScreen();
+}
+
+    function getCurrentRole() {
+  return currentUser?.role || "";
+}
+
+function canAccessPage(pageName) {
+  const btn = document.querySelector('.nav-btn[data-page="' + pageName + '"]');
+
+  if (!btn) return true;
+
+  const rolesText = btn.getAttribute("data-roles") || "";
+  const allowedRoles = rolesText.split(",").map(r => r.trim()).filter(Boolean);
+  const role = getCurrentRole();
+
+  if (allowedRoles.length === 0) return true;
+
+  return allowedRoles.includes(role);
+}
+
+function applyRoleBasedMenu() {
+  const role = getCurrentRole();
+
+  document.querySelectorAll(".nav-btn[data-roles]").forEach(btn => {
+    const rolesText = btn.getAttribute("data-roles") || "";
+    const allowedRoles = rolesText.split(",").map(r => r.trim()).filter(Boolean);
+
+    if (allowedRoles.length === 0 || allowedRoles.includes(role)) {
+      btn.style.display = "";
+    } else {
+      btn.style.display = "none";
+    }
+  });
+
+  document.querySelectorAll(".nav-group").forEach(group => {
+    const groupRolesText = group.getAttribute("data-group-roles") || "";
+    const groupRoles = groupRolesText.split(",").map(r => r.trim()).filter(Boolean);
+
+    const hasGroupPermission = groupRoles.length === 0 || groupRoles.includes(role);
+    const hasVisibleChild = Array.from(group.querySelectorAll(".nav-btn[data-page]"))
+      .some(btn => btn.style.display !== "none");
+
+    group.style.display = (hasGroupPermission && hasVisibleChild) ? "" : "none";
+  });
+}
+
+function getFirstAllowedPage() {
+  const visibleBtn = Array.from(document.querySelectorAll(".nav-btn"))
+    .find(btn => btn.style.display !== "none");
+
+  return visibleBtn?.getAttribute("data-page") || "dashboard";
+}
+    
+    function showConfirmPopup(title, message, okText = "ยืนยัน") {
+  return new Promise(resolve => {
+    const titleEl = document.getElementById("confirm-title");
+    const messageEl = document.getElementById("confirm-message");
+    const okBtn = document.getElementById("confirm-ok-btn");
+    const modalEl = document.getElementById("confirmModal");
+
+    if (titleEl) titleEl.innerText = title || "ยืนยันการทำรายการ";
+    if (messageEl) messageEl.innerText = message || "กรุณายืนยัน";
+    if (okBtn) okBtn.innerText = okText || "ยืนยัน";
+
+    const modal = new bootstrap.Modal(modalEl);
+
+    const cleanup = () => {
+      okBtn.removeEventListener("click", onOk);
+      modalEl.removeEventListener("hidden.bs.modal", onCancel);
+    };
+
+    const onOk = () => {
+      cleanup();
+      modal.hide();
+      resolve(true);
+    };
+
+    const onCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    okBtn.addEventListener("click", onOk);
+    modalEl.addEventListener("hidden.bs.modal", onCancel, { once: true });
+
+    modal.show();
+  });
+}
+    
+    function showSuccessPopup(title, message) {
+      const titleEl = document.getElementById("success-title");
+      const messageEl = document.getElementById("success-message");
+
+      if (titleEl) titleEl.innerText = title || "สำเร็จ";
+      if (messageEl) messageEl.innerText = message || "ดำเนินการสำเร็จ";
+
+      const modalEl = document.getElementById("successModal");
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+    
+    function getUserAgentText() {
+  return navigator.userAgent || "";
+}
+
+function showLoginError(message) {
+  const el = document.getElementById("login-error");
+  if (!el) return;
+
+  el.innerText = message || "เกิดข้อผิดพลาด";
+  el.style.display = "block";
+}
+
+function clearLoginError() {
+  const el = document.getElementById("login-error");
+  if (!el) return;
+
+  el.innerText = "";
+  el.style.display = "none";
+}
+
+function showLoginScreen() {
+  document.getElementById("login-screen")?.classList.remove("auth-hidden");
+  document.getElementById("app-layout")?.classList.add("auth-hidden");
+}
+
+function showAppScreen() {
+  document.getElementById("login-screen")?.classList.add("auth-hidden");
+  document.getElementById("app-layout")?.classList.remove("auth-hidden");
+}
+
+function saveSession(token, user) {
+  currentToken = token || "";
+  currentUser = user || null;
+
+  sessionStorage.setItem(TOKEN_KEY, currentToken);
+  sessionStorage.setItem(USER_KEY, JSON.stringify(currentUser || {}));
+
+  updateSidebarUser();
+}
+
+function clearSession() {
+  currentToken = "";
+  currentUser = null;
+
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
+
+  updateSidebarUser();
+}
+
+function updateSidebarUser() {
+  const nameEl = document.getElementById("sidebar-user-name");
+  const roleEl = document.getElementById("sidebar-user-role");
+
+  if (nameEl) {
+    nameEl.innerText = currentUser?.fullName || "-";
+  }
+
+  if (roleEl) {
+    roleEl.innerText = currentUser?.role || "-";
+  }
+  applyRoleBasedMenu();
+}
+
+async function initAuth() {
+  const storedUser = sessionStorage.getItem(USER_KEY);
+
+  if (storedUser) {
+    try {
+      currentUser = JSON.parse(storedUser);
+    } catch (err) {
+      currentUser = null;
+    }
+  }
+
+  if (!currentToken) {
+    showLoginScreen();
+    return;
+  }
+
+  try {
+    const res = await apiCall("getSessionUser", {
+      data: JSON.stringify({
+        token: currentToken
+      })
+    });
+
+    if (!res || res.status !== "success") {
+      clearSession();
+      showLoginScreen();
+      return;
+    }
+
+    currentUser = res.user;
+    saveSession(currentToken, currentUser);
+    showAppScreen();
+
+    if (currentUser.mustChangePassword) {
+      openChangePasswordModal();
+    } else {
+      showPage(getFirstAllowedPage());
+    }
+
+  } catch (err) {
+    console.error("initAuth error =", err);
+    clearSession();
+    showLoginScreen();
+  }
+}
+
+async function login() {
+  clearLoginError();
+
+  const username = document.getElementById("login-username").value.trim();
+  const password = document.getElementById("login-password").value;
+
+  if (!username || !password) {
+    showLoginError("กรุณาระบุ username และรหัสผ่าน");
+    return;
+  }
+
+  try {
+    setButtonBusy("login-btn", true, "⏳ กำลังเข้าสู่ระบบ...");
+
+    const res = await apiCall("login", {
+      data: JSON.stringify({
+        username: username,
+        password: password,
+        userAgent: getUserAgentText()
+      })
+    });
+
+    if (!res || res.status !== "success") {
+      showLoginError((res && res.message) ? res.message : "เข้าสู่ระบบไม่สำเร็จ");
+      return;
+    }
+
+    saveSession(res.token, res.user);
+    showAppScreen();
+
+    document.getElementById("login-password").value = "";
+
+    const mustChange = res.mustChangePassword || res.user?.mustChangePassword;
+
+    if (mustChange) {
+      openChangePasswordModal();
+    } else {
+      showPage(getFirstAllowedPage());
+    }
+
+  } catch (err) {
+    console.error("login error =", err);
+    showLoginError("เกิดข้อผิดพลาดตอนเข้าสู่ระบบ: " + (err.message || err));
+  } finally {
+    setButtonBusy("login-btn", false);
+  }
+}
+
+function openChangePasswordModal() {
+  document.getElementById("change-current-password").value = "";
+  document.getElementById("change-new-password").value = "";
+  document.getElementById("change-confirm-password").value = "";
+
+  const errEl = document.getElementById("change-password-error");
+  if (errEl) {
+    errEl.style.display = "none";
+    errEl.innerText = "";
+  }
+
+  new bootstrap.Modal(document.getElementById("changePasswordModal")).show();
+}
+
+async function submitChangePassword() {
+  const currentPassword = document.getElementById("change-current-password").value;
+  const newPassword = document.getElementById("change-new-password").value;
+  const confirmPassword = document.getElementById("change-confirm-password").value;
+  const errEl = document.getElementById("change-password-error");
+
+  function showErr(msg) {
+    if (!errEl) return;
+    errEl.innerText = msg;
+    errEl.style.display = "block";
+  }
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    showErr("กรุณากรอกข้อมูลให้ครบ");
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showErr("รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน");
+    return;
+  }
+
+  try {
+    setButtonBusy("change-password-btn", true, "⏳ กำลังบันทึก...");
+
+    const res = await apiCall("changePassword", {
+      data: JSON.stringify({
+        token: currentToken,
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+        userAgent: getUserAgentText()
+      })
+    });
+
+    if (!res || res.status !== "success") {
+      showErr((res && res.message) ? res.message : "เปลี่ยนรหัสผ่านไม่สำเร็จ");
+      return;
+    }
+
+    currentUser = res.user;
+    saveSession(currentToken, currentUser);
+    showPage("dashboard");
+
+    const modal = bootstrap.Modal.getInstance(document.getElementById("changePasswordModal"));
+    if (modal) modal.hide();
+
+    setTimeout(() => {
+      showSuccessPopup("เปลี่ยนรหัสผ่านสำเร็จ", "เข้าสู่ระบบพร้อมใช้งานแล้ว");
+    }, 300);
+
+  } catch (err) {
+    console.error("changePassword error =", err);
+    showErr("เกิดข้อผิดพลาด: " + (err.message || err));
+  } finally {
+    setButtonBusy("change-password-btn", false);
+  }
+}
+
+function openForgotPasswordModal() {
+  document.getElementById("forgot-username").value = document.getElementById("login-username").value.trim() || "";
+  document.getElementById("forgot-otp").value = "";
+  document.getElementById("forgot-new-password").value = "";
+  document.getElementById("forgot-confirm-password").value = "";
+
+  const msg = document.getElementById("forgot-message");
+  if (msg) {
+    msg.style.display = "none";
+    msg.innerText = "";
+    msg.className = "fw-bold";
+  }
+
+  new bootstrap.Modal(document.getElementById("forgotPasswordModal")).show();
+}
+
+function showForgotMessage(message, isError) {
+  const msg = document.getElementById("forgot-message");
+  if (!msg) return;
+
+  msg.innerText = message || "";
+  msg.style.display = "block";
+  msg.className = isError ? "fw-bold text-danger" : "fw-bold text-success";
+}
+
+async function sendForgotPasswordOtp() {
+  const username = document.getElementById("forgot-username").value.trim();
+
+  if (!username) {
+    showForgotMessage("กรุณาระบุ username", true);
+    return;
+  }
+
+  try {
+    setButtonBusy("forgot-send-btn", true, "⏳ กำลังส่ง OTP...");
+
+    const res = await apiCall("forgotPassword", {
+      data: JSON.stringify({
+        username: username,
+        userAgent: getUserAgentText()
+      })
+    });
+
+    if (!res || res.status !== "success") {
+      showForgotMessage((res && res.message) ? res.message : "ส่ง OTP ไม่สำเร็จ", true);
+      return;
+    }
+
+    showForgotMessage(res.message || "ส่ง OTP แล้ว กรุณาตรวจสอบอีเมล", false);
+
+  } catch (err) {
+    console.error("forgotPassword error =", err);
+    showForgotMessage("เกิดข้อผิดพลาด: " + (err.message || err), true);
+  } finally {
+    setButtonBusy("forgot-send-btn", false);
+  }
+}
+
+async function resetPasswordWithOtp() {
+  const username = document.getElementById("forgot-username").value.trim();
+  const otp = document.getElementById("forgot-otp").value.trim();
+  const newPassword = document.getElementById("forgot-new-password").value;
+  const confirmPassword = document.getElementById("forgot-confirm-password").value;
+
+  if (!username || !otp || !newPassword || !confirmPassword) {
+    showForgotMessage("กรุณากรอก username, OTP และรหัสผ่านใหม่ให้ครบ", true);
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showForgotMessage("รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน", true);
+    return;
+  }
+
+  try {
+    setButtonBusy("forgot-reset-btn", true, "⏳ กำลังตั้งรหัสใหม่...");
+
+    const res = await apiCall("resetPasswordWithOtp", {
+      data: JSON.stringify({
+        username: username,
+        otp: otp,
+        newPassword: newPassword,
+        userAgent: getUserAgentText()
+      })
+    });
+
+    if (!res || res.status !== "success") {
+      showForgotMessage((res && res.message) ? res.message : "ตั้งรหัสใหม่ไม่สำเร็จ", true);
+      return;
+    }
+
+    showForgotMessage(res.message || "ตั้งรหัสผ่านใหม่สำเร็จ", false);
+
+    setTimeout(() => {
+      const modal = bootstrap.Modal.getInstance(document.getElementById("forgotPasswordModal"));
+      if (modal) modal.hide();
+
+      document.getElementById("login-username").value = username;
+      document.getElementById("login-password").value = "";
+    }, 1200);
+
+  } catch (err) {
+    console.error("resetPasswordWithOtp error =", err);
+    showForgotMessage("เกิดข้อผิดพลาด: " + (err.message || err), true);
+  } finally {
+    setButtonBusy("forgot-reset-btn", false);
+  }
+}
+    
+    function getLocalDateInputValue() {
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000;
+      return new Date(now.getTime() - offset).toISOString().split("T")[0];
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("table-date").value = getLocalDateInputValue();
+
+  document.getElementById("dn-search").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") loadTable();
+  });
+
+  document.getElementById("table-date").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") loadTable();
+  });
+
+  document.getElementById("login-username")?.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+      document.getElementById("login-password").focus();
+    }
+  });
+
+  document.getElementById("login-password")?.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+      login();
+    }
+  });
+
+  initAuth();
+});
+
+    function toggleReason() {
+      const status = document.getElementById("sc-status").value;
+      const reasonBox = document.getElementById("reason-box");
+      const reasonInput = document.getElementById("sc-reason");
+
+      if (status === "ไม่ผ่าน") {
+        reasonBox.style.display = "block";
+      } else {
+        reasonBox.style.display = "none";
+        reasonInput.value = "";
+      }
+    }
+
+    async function saveData() {
+      const data = {
+        idCard: document.getElementById("id_card").value.trim(),
+        prefix: document.getElementById("prefix").value.trim(),
+        fname: document.getElementById("fname").value.trim(),
+        lname: document.getElementById("lname").value.trim(),
+        birthDate: document.getElementById("birth_date").value.trim(),
+        gender: document.getElementById("gender").value.trim(),
+        address: document.getElementById("address").value.trim(),
+        phone: document.getElementById('phone').value
+      };
+
+      if (!data.idCard || !data.prefix || !data.fname || !data.lname || !data.birthDate || !data.gender) {
+        alert("กรุณากรอกข้อมูลสำคัญให้ครบ: เลขบัตรประชาชน, คำนำหน้า, ชื่อ, นามสกุล, วันเกิด, เพศ");
+        return;
+      }
+
+      if (!/^\d{13}$/.test(data.idCard)) {
+        alert("เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก");
+        document.getElementById("id_card").focus();
+        return;
+      }
+
+      try {
+        setButtonBusy("save-btn", true, "⏳ กำลังบันทึก...");
+
+        const res = await apiCall("saveDataToSheet", {
+          data: JSON.stringify(data)
+        });
+
+        if (!res || res.status !== "success") {
+          alert((res && res.message) ? res.message : "บันทึกไม่สำเร็จ");
+          return;
+        }
+
+        alert("บันทึกสำเร็จ!");
+
+        const rowStr = encodeURIComponent(JSON.stringify(res));
+        printA4FromRow(rowStr);
+
+        clearForm();
+        loadTable();
+
+      } catch (err) {
+        console.error("saveData error =", err);
+        alert("เกิดข้อผิดพลาดตอนบันทึกข้อมูล: " + (err.message || err));
+      } finally {
+        setButtonBusy("save-btn", false);
+      }
+    }
+
+    function updateDashboard(data) {
+      const total = data.length;
+      const pass = data.filter(row => row.status === "ผ่าน").length;
+      const fail = data.filter(row => row.status === "ไม่ผ่าน").length;
+      const pending = data.filter(row => !row.status || row.status === "รอคัดกรอง").length;
+
+      const totalEl = document.getElementById("dash-total");
+      const passEl = document.getElementById("dash-pass");
+      const failEl = document.getElementById("dash-fail");
+      const pendingEl = document.getElementById("dash-pending");
+
+      if (totalEl) totalEl.innerText = total;
+      if (passEl) passEl.innerText = pass;
+      if (failEl) failEl.innerText = fail;
+      if (pendingEl) pendingEl.innerText = pending;
+    }
+
+    function getAuditActionBadgeClass(action) {
+  const text = (action || "").toString();
+
+  if (text.includes("LOGIN")) return "bg-info text-dark";
+  if (text.includes("PASSWORD")) return "bg-warning text-dark";
+  if (text.includes("DEACTIVATE")) return "bg-danger";
+  if (text.includes("ACTIVATE")) return "bg-success";
+  if (text.includes("PRINT")) return "bg-primary";
+  if (text.includes("SCREENING_PASS")) return "bg-success";
+  if (text.includes("SCREENING_FAIL")) return "bg-danger";
+  if (text.includes("CERTIFICATE")) return "bg-secondary";
+  if (text.includes("DONOR")) return "bg-dark";
+
+  return "bg-secondary";
+}
+
+function openAuditDetail(encodedLog) {
+  const log = JSON.parse(decodeURIComponent(encodedLog));
+
+  document.getElementById("audit-detail-time").innerText = log.timestamp || "-";
+  document.getElementById("audit-detail-username").innerText = log.username || "-";
+  document.getElementById("audit-detail-role").innerText = log.role || "-";
+  document.getElementById("audit-detail-fullname").innerText = log.fullName || "-";
+  document.getElementById("audit-detail-action").innerText = log.action || "-";
+  document.getElementById("audit-detail-target-type").innerText = log.targetType || "-";
+  document.getElementById("audit-detail-target-id").innerText = log.targetId || "-";
+  document.getElementById("audit-detail-detail").innerText = log.detail || "-";
+  document.getElementById("audit-detail-useragent").innerText = log.userAgent || "-";
+
+  new bootstrap.Modal(document.getElementById("auditDetailModal")).show();
+}
+
+async function loadAuditLogs() {
+  const tbody = document.getElementById("audit-log-table-body");
+  if (!tbody) return;
+
+  const date = document.getElementById("audit-date")?.value || "";
+  const username = document.getElementById("audit-username")?.value || "";
+  const action = document.getElementById("audit-action")?.value || "";
+  const limit = document.getElementById("audit-limit")?.value || "100";
+
+  tbody.innerHTML = '<tr><td colspan="7" class="text-center">⌛ กำลังโหลด AuditLog...</td></tr>';
+
+  try {
+    setButtonBusy("audit-refresh-btn", true, "⏳ โหลด...");
+
+    const res = await apiCall("listAuditLogs", {
+      data: JSON.stringify({
+        date: date,
+        username: username,
+        action: action,
+        limit: limit
+      })
+    });
+
+    if (!res || res.status !== "success") {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-danger">
+            ${escapeHtml((res && res.message) ? res.message : "โหลด AuditLog ไม่สำเร็จ")}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const logs = res.logs || [];
+
+    if (logs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">ไม่พบ AuditLog ตามเงื่อนไข</td></tr>';
+      return;
+    }
+
+    let html = "";
+
+    logs.forEach(log => {
+      const actionBadgeClass = getAuditActionBadgeClass(log.action);
+      const logStr = encodeURIComponent(JSON.stringify(log));
+
+      html += `
+        <tr class="audit-row" onclick="openAuditDetail('${logStr}')">
+          <td class="text-nowrap">${escapeHtml(log.timestamp || "-")}</td>
+          <td><strong>${escapeHtml(log.username || "-")}</strong></td>
+          <td>${escapeHtml(log.fullName || "-")}</td>
+          <td><span class="badge bg-light text-dark">${escapeHtml(log.role || "-")}</span></td>
+          <td>
+            <span class="badge audit-action-badge ${actionBadgeClass}">
+              ${escapeHtml(log.action || "-")}
+            </span>
+          </td>
+          <td>
+            <div><strong>${escapeHtml(log.targetType || "-")}</strong></div>
+            <div class="small text-muted">${escapeHtml(log.targetId || "-")}</div>
+          </td>
+          <td class="audit-detail-cell">${escapeHtml(log.detail || "-")}</td>
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = html;
+
+  } catch (err) {
+    console.error("loadAuditLogs error =", err);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-danger">
+          เกิดข้อผิดพลาด: ${escapeHtml(err.message || err)}
+        </td>
+      </tr>
+    `;
+  } finally {
+    setButtonBusy("audit-refresh-btn", false);
+  }
+}
+
+function clearAuditFilters() {
+  const dateEl = document.getElementById("audit-date");
+  const usernameEl = document.getElementById("audit-username");
+  const actionEl = document.getElementById("audit-action");
+  const limitEl = document.getElementById("audit-limit");
+
+  if (dateEl) dateEl.value = "";
+  if (usernameEl) usernameEl.value = "";
+  if (actionEl) actionEl.value = "";
+  if (limitEl) limitEl.value = "100";
+
+  loadAuditLogs();
+}
+    
+    async function loadUsersSettings() {
+  const tbody = document.getElementById("users-table-body");
+
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="9" class="text-center">⌛ กำลังโหลดรายชื่อผู้ใช้งาน...</td></tr>';
+
+  try {
+    setButtonBusy("users-refresh-btn", true, "⏳ โหลด...");
+
+    const res = await apiCall("listUsers", {});
+
+    if (!res || res.status !== "success") {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" class="text-center text-danger">
+            ${escapeHtml((res && res.message) ? res.message : "โหลดรายชื่อผู้ใช้งานไม่สำเร็จ")}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const users = res.users || [];
+
+    if (users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">ไม่พบรายชื่อผู้ใช้งาน</td></tr>';
+      return;
+    }
+
+    let html = "";
+
+    users.forEach(user => {
+      const activeBadge = user.active
+        ? '<span class="badge bg-success">Active</span>'
+        : '<span class="badge bg-secondary">Inactive</span>';
+
+      const firstLoginBadge = user.mustChangePassword
+        ? '<span class="badge bg-warning text-dark">รอเปลี่ยนรหัส</span>'
+        : '<span class="badge bg-success">ตั้งรหัสแล้ว</span>';
+
+      html += `
+        <tr>
+          <td><strong>${escapeHtml(user.username)}</strong></td>
+          <td>${escapeHtml(user.fullName)}</td>
+          <td><span class="badge bg-primary">${escapeHtml(user.role)}</span></td>
+          <td>${escapeHtml(user.position)}</td>
+          <td>${escapeHtml(user.approvalLevel)}</td>
+          <td>${activeBadge}</td>
+          <td>${firstLoginBadge}</td>
+          <td>${escapeHtml(user.email || "-")}</td>
+          <td>${escapeHtml(user.lastLogin || "-")}</td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap">
+              <button class="btn btn-sm btn-outline-warning"
+                onclick="adminResetPassword('${escapeHtml(user.username)}', '${escapeHtml(user.fullName)}')">
+                🔑 Reset
+              </button>
+
+              ${user.username === currentUser?.username ? `
+                <button class="btn btn-sm btn-outline-secondary" disabled>
+                  ตัวเอง
+                </button>
+              ` : user.active ? `
+                <button class="btn btn-sm btn-outline-danger"
+                  onclick="adminSetUserActive('${escapeHtml(user.username)}', '${escapeHtml(user.fullName)}', false)">
+                  ปิดใช้
+                </button>
+              ` : `
+               <button class="btn btn-sm btn-outline-success"
+                  onclick="adminSetUserActive('${escapeHtml(user.username)}', '${escapeHtml(user.fullName)}', true)">
+                  เปิดใช้
+                </button>
+              `}
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = html;
+
+  } catch (err) {
+    console.error("loadUsersSettings error =", err);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" class="text-center text-danger">
+          เกิดข้อผิดพลาด: ${escapeHtml(err.message || err)}
+        </td>
+      </tr>
+    `;
+  } finally {
+    setButtonBusy("users-refresh-btn", false);
+  }
+}
+
+
+    async function adminResetPassword(username, fullName) {
+  if (!username) {
+    alert("ไม่พบ username");
+    return;
+  }
+
+  const ok = await showConfirmPopup(
+    "Reset password?",
+    "ยืนยัน Reset password ให้ผู้ใช้นี้?\n\n" +
+    "Username: " + username + "\n" +
+    "ชื่อ: " + (fullName || "-") + "\n\n" +
+    "หลัง reset ผู้ใช้นี้ต้อง Login ด้วย username เป็นรหัสผ่านเริ่มต้น และระบบจะบังคับเปลี่ยนรหัสผ่านใหม่",
+    "Reset password"
+  );
+
+if (!ok) return;
+
+  try {
+    const res = await apiCall("adminResetUserPassword", {
+      data: JSON.stringify({
+        username: username
+      })
+    });
+
+    if (!res || res.status !== "success") {
+      alert((res && res.message) ? res.message : "Reset password ไม่สำเร็จ");
+      return;
+    }
+
+    showSuccessPopup(
+      "Reset password สำเร็จ",
+      "ผู้ใช้ " + username + " ต้อง Login ด้วย username เป็นรหัสผ่านเริ่มต้น"
+    );
+
+    loadUsersSettings();
+
+  } catch (err) {
+    console.error("adminResetPassword error =", err);
+    alert("เกิดข้อผิดพลาด: " + (err.message || err));
+  }
+}
+
+
+    async function adminSetUserActive(username, fullName, active) {
+  if (!username) {
+    showSuccessPopup("ไม่พบ username", "ไม่สามารถเปลี่ยนสถานะผู้ใช้งานได้");
+    return;
+  }
+
+  const ok = await showConfirmPopup(
+    active ? "เปิดใช้งานผู้ใช้?" : "ปิดใช้งานผู้ใช้?",
+    "Username: " + username + "\n" +
+    "ชื่อ: " + (fullName || "-") + "\n\n" +
+    (active
+      ? "ผู้ใช้นี้จะกลับมา Login ได้ตามปกติ"
+      : "ผู้ใช้นี้จะ Login ไม่ได้ และ session เดิมจะถูกล้างทันที"),
+    active ? "เปิดใช้งาน" : "ปิดใช้งาน"
+  );
+
+  if (!ok) return;
+
+  try {
+    const res = await apiCall("adminSetUserActive", {
+      data: JSON.stringify({
+        username: username,
+        active: active
+      })
+    });
+
+    if (!res || res.status !== "success") {
+      showSuccessPopup("ทำรายการไม่สำเร็จ", (res && res.message) ? res.message : "เปลี่ยนสถานะไม่สำเร็จ");
+      return;
+    }
+
+    showSuccessPopup(
+      active ? "เปิดใช้งานสำเร็จ" : "ปิดใช้งานสำเร็จ",
+      res.message || "ดำเนินการสำเร็จ"
+    );
+
+    loadUsersSettings();
+
+  } catch (err) {
+    console.error("adminSetUserActive error =", err);
+    showSuccessPopup("เกิดข้อผิดพลาด", err.message || String(err));
+  }
+}
+    
+    
+    async function loadTable() {
+      let dateInput = document.getElementById('table-date')?.value || getLocalDateInputValue();
+      const dnQuery = (document.getElementById('dn-search')?.value || "").trim().toLowerCase();
+
+      if (document.getElementById('table-date') && !document.getElementById('table-date').value) {
+        document.getElementById('table-date').value = dateInput;
+      }
+      const tbody = document.getElementById("visit-table-body");
+
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center">⌛ กำลังโหลด...</td></tr>';
+
+      try {
+        setButtonBusy("search-btn", true, "⏳ โหลด...");
+
+        const data = await apiCall("getRecentVisits", {
+          targetDate: dateInput
+        });
+
+        if (data && data.status === "error") {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">' + escapeHtml(data.message || "เกิดข้อผิดพลาด") + "</td></tr>";
+          return;
+        }
+
+        updateDashboard(data || []);
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center">ไม่พบข้อมูลของวันที่ ' + escapeHtml(dateInput) + "</td></tr>";
+          return;
+        }
+
+        let filteredData = data;
+
+        if (dnQuery !== "") {
+          filteredData = data.filter(row =>
+            ((row.dn || "").toString().toLowerCase().includes(dnQuery))
+          );
+        }
+
+        filteredData = filterByCurrentTableMode(filteredData);
+
+        if (filteredData.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center">ไม่พบข้อมูลที่ตรงกับเมนูนี้</td></tr>';
+          return;
+        }
+
+        let html = "";
+
+        filteredData.forEach((row, index) => {
+  let badgeClass = "bg-warning text-dark";
+  let statusText = "รอคัดกรอง";
+
+  if (row.status === "ผ่าน") {
+    badgeClass = "bg-success";
+    statusText = "ผ่าน";
+  } else if (row.status === "ไม่ผ่าน") {
+    badgeClass = "bg-danger";
+    statusText = "ไม่ผ่าน";
+  }
+
+  let rowStr = encodeURIComponent(JSON.stringify(row));
+  let isPending = rowIsPending(row);
+  let hasBag = rowHasBag(row);
+  let disableScreen = (hasBag || !isPending) ? "disabled" : "";
+
+  html += `
+    <tr onclick="openVisitDetail('${rowStr}')">
+      <td>${filteredData.length - index}</td>
+      <td>${escapeHtml(row.dn)}</td>
+      <td>
+        <strong>${escapeHtml(row.name)}</strong><br>
+        <small class="text-muted">วัน/เดือน/ปีเกิด: ${escapeHtml(row.birth)}</small>
+      </td>
+      <td><span class="badge ${badgeClass}" style="width:80px">${statusText}</span></td>
+      <td><strong class="text-primary">${escapeHtml(row.bag || "-")}</strong></td>
+      <td>
+        ${buildActionButtons(row, rowStr, disableScreen)}
+      </td>
+    </tr>
+  `;
+});
+
+        tbody.innerHTML = html;
+
+      } catch (err) {
+        console.error("loadTable error =", err);
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">เกิดข้อผิดพลาด: ' + escapeHtml(err.message || err) + "</td></tr>";
+      } finally {
+        setButtonBusy("search-btn", false);
+      }
+    }
+
+    function prepareEdit(rowStr) {
+      let row = JSON.parse(decodeURIComponent(rowStr));
+      
+      showPage("register");
+
+      document.getElementById("id_card").value = row.idCard || "";
+      document.getElementById("prefix").value = row.prefix || "";
+      document.getElementById("fname").value = row.fname || "";
+      document.getElementById("lname").value = row.lname || "";
+      document.getElementById("birth_date").value = row.birth || "";
+      document.getElementById("gender").value = row.gender || "";
+      document.getElementById("address").value = row.address || "";
+      document.getElementById('phone').value = row.phone || "";
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function clearForm() {
+      const fields = ["id_card", "prefix", "fname", "lname", "birth_date", "gender", "address", "phone"];
+
+      fields.forEach(id => {
+        document.getElementById(id).value = "";
+      });
+
+      document.getElementById("id_card").focus();
+    }
+
+    function resetScreeningForm() {
+      document.getElementById("sc-type").value = "";
+      document.getElementById("sc-group").value = "-";
+      document.getElementById("sc-weight").value = "";
+      document.getElementById("sc-bp").value = "";
+      document.getElementById("sc-pulse").value = "";
+      document.getElementById("sc-temp").value = "";
+      document.getElementById("sc-hb").value = "";
+      document.getElementById("sc-status").value = "";
+      document.getElementById("sc-reason").value = "";
+      document.getElementById("reason-box").style.display = "none";
+    }
+
+    function openScreening(encodedRow) {
+      let row = JSON.parse(decodeURIComponent(encodedRow));
+
+      resetScreeningForm();
+
+      document.getElementById("modal-dn").value = row.dn || "";
+      document.getElementById("modal-name").innerText = row.name || "";
+      document.getElementById("modal-row-json").value = encodedRow || "";
+
+      new bootstrap.Modal(document.getElementById("screeningModal")).show();
+    }
+
+    async function submitScreening() {
+      let dn = document.getElementById("modal-dn").value;
+      let encodedBaseRow = document.getElementById("modal-row-json").value || encodeURIComponent(JSON.stringify({}));
+      let baseRow = JSON.parse(decodeURIComponent(encodedBaseRow));
+
+      let sData = {
+        type: document.getElementById("sc-type").value,
+        group: document.getElementById("sc-group").value,
+        weight: document.getElementById("sc-weight").value,
+        bp: document.getElementById("sc-bp").value,
+        pulse: document.getElementById("sc-pulse").value,
+        temp: document.getElementById("sc-temp").value,
+        hb: document.getElementById("sc-hb").value,
+        status: document.getElementById("sc-status").value,
+        reason: document.getElementById("sc-reason").value
+      };
+
+      if (!sData.status) {
+        alert("กรุณาเลือกผลคัดกรอง");
+        document.getElementById("sc-status").focus();
+        return;
+      }
+
+      if (sData.status === "ผ่าน") {
+        if (!sData.type) {
+          alert("กรุณาเลือกประเภทผู้บริจาค");
+          document.getElementById("sc-type").focus();
+          return;
+        }
+
+        if (!sData.group || sData.group === "-") {
+          alert("กรุณาเลือกหมู่เลือด");
+          document.getElementById("sc-group").focus();
+          return;
+        }
+
+        if (!sData.weight || !sData.bp || !sData.pulse || !sData.temp || !sData.hb) {
+          alert("กรุณากรอกข้อมูลคัดกรองให้ครบก่อนบันทึก");
+          return;
+        }
+      }
+
+      if (sData.status === "ไม่ผ่าน" && !sData.reason) {
+        alert("กรุณาระบุเหตุผลที่ไม่ผ่าน");
+        document.getElementById("sc-reason").focus();
+        return;
+      }
+
+      try {
+        setButtonBusy("screening-save-btn", true, "⏳ กำลังบันทึก...");
+
+        const res = await apiCall("saveScreeningResult", {
+          dn: dn,
+          data: JSON.stringify(sData)
+        });
+
+        if (!res || res.status === "error") {
+          alert((res && res.message) ? res.message : "บันทึกผลคัดกรองไม่สำเร็จ");
+          return;
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById("screeningModal")).hide();
+        resetScreeningForm();
+
+        let printRow = {
+          ...baseRow,
+          bag: res.bagNumber || "",
+          type: sData.type || "",
+          group: sData.group || "",
+          saveTime: res.saveTime || "",
+          c1: res.c1 || "",
+          c2: res.c2 || "",
+          e1: res.e1 || "",
+          e2: res.e2 || "",
+          status: sData.status || ""
+        };
+
+        if (sData.status === "ผ่าน") {
+          printTSCFromRow(encodeURIComponent(JSON.stringify(printRow)));
+        }
+
+        loadTable();
+
+      } catch (err) {
+        console.error("submitScreening error =", err);
+        alert("เกิดข้อผิดพลาดตอนบันทึกผลคัดกรอง: " + (err.message || err));
+      } finally {
+        setButtonBusy("screening-save-btn", false);
+      }
+    }
+
+    function openVisitDetail(encodedRow) {
+      let row = JSON.parse(decodeURIComponent(encodedRow));
+
+      document.getElementById("vd-dn").innerText = row.dn || "-";
+      document.getElementById("vd-bag").innerText = row.bag || "-";
+      document.getElementById("vd-status").innerText = row.status || "รอคัดกรอง";
+      document.getElementById("vd-name").innerText = row.name || "-";
+      document.getElementById("vd-birth").innerText = row.birth || "-";
+      document.getElementById("vd-gender").innerText = row.gender || "-";
+      document.getElementById('vd-phone').innerText = row.phone || '-';
+      document.getElementById("vd-group").innerText = row.group || "-";
+      document.getElementById("vd-type").innerText = row.type || "-";
+      document.getElementById("vd-weight").innerText = row.weight || "-";
+      document.getElementById("vd-hb").innerText = row.hb || "-";
+      document.getElementById("vd-bp").innerText = row.bp || "-";
+      document.getElementById("vd-pulse").innerText = row.pulse || "-";
+      document.getElementById("vd-temp").innerText = row.temp || "-";
+      document.getElementById("vd-save-time").innerText = row.saveTime || "-";
+
+      let reasonEl = document.getElementById("vd-reason");
+      let status = (row.status || "").trim();
+
+      if (status === "ไม่ผ่าน") {
+        reasonEl.className = "detail-value reason-fail";
+        reasonEl.innerText = row.reason || "ไม่ระบุเหตุผล";
+      } else if (status === "รอคัดกรอง") {
+        reasonEl.className = "detail-value reason-pending";
+        reasonEl.innerText = "ยังไม่ได้ลงผลคัดกรอง";
+      } else {
+        reasonEl.className = "detail-value reason-pass";
+        reasonEl.innerText = "ผ่านคัดกรอง";
+      }
+
+      new bootstrap.Modal(document.getElementById("visitDetailModal")).show();
+    }
+
+    function setPrintPageSize(sizeText) {
+      let styleEl = document.getElementById("dynamic-print-page-size");
+
+      if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = "dynamic-print-page-size";
+        document.head.appendChild(styleEl);
+      }
+
+      styleEl.textContent = `
+        @media print {
+          @page {
+            size: ${sizeText};
+            margin: 0;
+          }
+        }
+      `;
+    }
+
+    function clearPrintPageSize() {
+      const styleEl = document.getElementById("dynamic-print-page-size");
+      if (styleEl) {
+        styleEl.remove();
+      }
+    }
+
+    async function printA4FromRow(encodedRow) {
+      try {
+        let row = JSON.parse(decodeURIComponent(encodedRow));
+        
+        await logPrintAction("PRINT_A4", row);
+
+        let pDn = document.getElementById("p-dn");
+        let pBarcode = document.getElementById("p-barcode");
+        let pName = document.getElementById("p-name");
+        let pId = document.getElementById("p-id");
+        let pBirth = document.getElementById("p-birth");
+        let pAge = document.getElementById("p-age");
+        let pGender = document.getElementById("p-gender");
+        let pAddress = document.getElementById("p-address");
+        let a4 = document.getElementById("a4-template");
+        let tsc = document.getElementById("tsc-template");
+        let cert = document.getElementById("cert-template");
+
+        if (!pDn || !pBarcode || !pName || !pId || !pBirth || !pAge || !pGender || !pAddress || !a4) {
+          alert("ไม่พบ element สำหรับพิมพ์ A4 บางตัว");
+          return;
+        }
+
+        let age = "-";
+
+        if (row.birth && row.birth.includes("-")) {
+          let parts = row.birth.split("-");
+          let yearBE = parseInt(parts[2], 10);
+
+          if (!isNaN(yearBE)) {
+            age = (new Date().getFullYear() + 543) - yearBE;
+          }
+        }
+
+        pDn.innerText = "DN: " + (row.dn || "");
+        pName.innerText = "ชื่อ-สกุล: " + (row.name || "");
+        pId.innerText = "เลขบัตรประชาชน: " + (row.idCard || "");
+        pBirth.innerText = "วัน-เดือน-ปีเกิด: " + (row.birth || "-");
+        pAge.innerText = "อายุ: " + age + " ปี";
+        pGender.innerText = "เพศ: " + (row.gender || "-");
+        pAddress.innerText = "ที่อยู่: " + (row.address || "-");
+
+        a4.className = "active-print";
+
+        if (tsc) {
+          tsc.className = "";
+          tsc.style.display = "";
+          tsc.style.visibility = "";
+        }
+
+        if (cert) {
+          cert.className = "";
+          cert.style.display = "";
+          cert.style.visibility = "";
+        }
+
+        if (row.dn) {
+          JsBarcode("#p-barcode", row.dn, {
+            format: "CODE128",
+            width: 1.6,
+            height: 42,
+            displayValue: false,
+            margin: 0
+          });
+        }
+
+        setPrintPageSize("210mm 297mm");
+
+        setTimeout(() => {
+          window.print();
+        }, 500);
+
+      } catch (err) {
+        console.error("PRINT ERROR:", err);
+        alert("พิมพ์ไม่สำเร็จ: " + err.message);
+      }
+    }
+
+    async function printCertificateFromRow(encodedRow) {
+      try {
+        let row = JSON.parse(decodeURIComponent(encodedRow));
+
+        let cert = document.getElementById("cert-template");
+        let a4 = document.getElementById("a4-template");
+        let tsc = document.getElementById("tsc-template");
+
+        let cCertNo = document.getElementById("c-cert-no");
+        let cName = document.getElementById("c-name");
+        let cId = document.getElementById("c-id");
+        let cAddress = document.getElementById("c-address");
+        let cVisitDate = document.getElementById("c-visit-date");
+        let cIssueDate = document.getElementById("c-issue-date");
+
+        if (!cert || !cCertNo || !cName || !cId || !cAddress || !cVisitDate || !cIssueDate) {
+          alert("ไม่พบ element สำหรับพิมพ์ใบรับรอง");
+          return;
+        }
+
+        const selectedDate = document.getElementById("table-date")?.value || getLocalDateInputValue();
+
+        const res = await apiCall("issueCertificateNumber", {
+          data: JSON.stringify({
+            dn: row.dn || "",
+            name: row.name || "",
+            idCard: row.idCard || "",
+            address: row.address || "",
+            visitDate: selectedDate,
+            remark: ""
+          })
+        });
+
+        if (!res || res.status !== "ok") {
+          alert((res && res.message) ? res.message : "สร้างเลขใบรับรองไม่สำเร็จ");
+          return;
+        }
+
+        cCertNo.innerText = res.certNo || "-";
+        cName.innerText = row.name || "-";
+        cId.innerText = row.idCard || "-";
+        cAddress.innerText = row.address || "-";
+        cVisitDate.innerText = formatThaiDateForCert(selectedDate);
+        cIssueDate.innerText = formatThaiDateForCert(res.issueDate || getLocalDateInputValue());
+
+        try {
+          await logPrintAction("PRINT_CERTIFICATE", row, {
+            certNo: res.certNo || ""
+          });
+        } catch (err) {
+          alert("ไม่สามารถพิมพ์หนังสือรับรองได้: " + (err.message || err));
+          return;
+        }
+
+        cert.className = "active-print";
+
+        if (a4) {
+          a4.className = "";
+          a4.style.display = "";
+          a4.style.visibility = "";
+        }
+
+        if (tsc) {
+          tsc.className = "";
+          tsc.style.display = "";
+          tsc.style.visibility = "";
+        }
+
+        setPrintPageSize("210mm 297mm");
+
+        setTimeout(() => {
+          window.print();
+        }, 300);
+
+      } catch (err) {
+        console.error("CERT PRINT ERROR:", err);
+        alert("พิมพ์ใบรับรองไม่สำเร็จ: " + err.message);
+      }
+    }
+
+    function sexToShort(gender) {
+      let g = (gender || "").toString().trim().toLowerCase();
+
+      if (g === "ชาย" || g === "male" || g === "m") return "M";
+      if (g === "หญิง" || g === "female" || g === "f") return "F";
+
+      return "-";
+    }
+
+    function escapeHtml(text) {
+      return (text || "").toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    /*
+     * Code 128 patterns, codeword 0-106.
+     * Each digit is a run width in modules, alternating bar/space from left to right.
+     */
+    const LIS_CODE128_PATTERNS = Object.freeze([
+      "212222", "222122", "222221", "121223", "121322", "131222", "122213", "122312", "132212", "221213",
+      "221312", "231212", "112232", "122132", "122231", "113222", "123122", "123221", "223211", "221132",
+      "221231", "213212", "223112", "312131", "311222", "321122", "321221", "312212", "322112", "322211",
+      "212123", "212321", "232121", "111323", "131123", "131321", "112313", "132113", "132311", "211313",
+      "231113", "231311", "112133", "112331", "132131", "113123", "113321", "133121", "313121", "211331",
+      "231131", "213113", "213311", "213131", "311123", "311321", "331121", "312113", "312311", "332111",
+      "314111", "221411", "431111", "111224", "111422", "121124", "121421", "141122", "141221", "112214",
+      "112412", "122114", "122411", "142112", "142211", "241211", "221114", "413111", "241112", "134111",
+      "111242", "121142", "121241", "114212", "124112", "124211", "411212", "421112", "421211", "212141",
+      "214121", "412121", "111143", "111341", "131141", "114113", "114311", "411113", "411311", "113141",
+      "114131", "311141", "411131", "211412", "211214", "211232", "2331112"
+    ]);
+
+    function buildLisCodewords(value) {
+      const normalized = (value || "").toString().trim().toUpperCase();
+      const match = /^CN(\d+)([A-Z]\d+)?$/.exec(normalized);
+      if (!match) {
+        throw new Error("รหัสสำหรับรูปแบบ LIS ต้องเป็น CN ตามด้วยตัวเลข และอาจมีรหัส Component เช่น C1 หรือ E2 ต่อท้าย");
+      }
+
+      const digits = match[1];
+      const suffix = match[2] || "";
+
+      // LIS pattern:
+      // 1) Start in Code Set B for the CN prefix.
+      // 2) Switch to Code Set C and pair the bag-number digits from the LEFT.
+      // 3) Switch back to Code Set B for an unpaired final digit and/or Component suffix.
+      // Examples:
+      //   CN6910097   => CN | 69 | 10 | 09 | 7
+      //   CN6910097E2 => CN | 69 | 10 | 09 | 7 | E | 2
+      const codewords = [104, 35, 46]; // Start B, C, N
+      let isCodeSetB = true;
+
+      if (digits.length >= 2) {
+        codewords.push(99); // Switch B -> C.
+        isCodeSetB = false;
+
+        const pairedLength = digits.length - (digits.length % 2);
+        for (let i = 0; i < pairedLength; i += 2) {
+          codewords.push(Number(digits.slice(i, i + 2)));
+        }
+
+        if (digits.length % 2 === 1) {
+          codewords.push(100); // Switch C -> B.
+          isCodeSetB = true;
+          codewords.push(digits.charCodeAt(digits.length - 1) - 32);
+        }
+      } else {
+        codewords.push(digits.charCodeAt(0) - 32);
+      }
+
+      if (suffix) {
+        if (!isCodeSetB) {
+          codewords.push(100); // Component letters require Code Set B.
+          isCodeSetB = true;
+        }
+
+        for (const char of suffix) {
+          const codeword = char.charCodeAt(0) - 32;
+          if (codeword < 0 || codeword > 95) {
+            throw new Error("รหัส Component มีอักขระที่ Code 128 Set B ไม่รองรับ");
+          }
+          codewords.push(codeword);
+        }
+      }
+
+      let checksum = codewords[0];
+      for (let i = 1; i < codewords.length; i += 1) {
+        checksum += codewords[i] * i;
+      }
+      codewords.push(checksum % 103, 106);
+      return codewords;
+    }
+
+    const TSC_TE310_BARCODE_PROFILE = Object.freeze({
+      dpi: 300,
+      dotsPerMm: 12,
+      moduleDots: 3,
+      quietModules: 4
+    });
+
+    function renderLisBarcode(svg, value, options = {}) {
+      const {
+        heightDots = 96,
+        barHeight = 32,
+        quietModules = TSC_TE310_BARCODE_PROFILE.quietModules,
+        moduleDots = TSC_TE310_BARCODE_PROFILE.moduleDots,
+        dotsPerMm = TSC_TE310_BARCODE_PROFILE.dotsPerMm
+      } = options;
+
+      let codewords;
+
+      try {
+        codewords = buildLisCodewords(value);
+      } catch (err) {
+        // Operational fallback for unexpected legacy data only.
+        JsBarcode(svg, value || "", {
+          format: "CODE128",
+          width: moduleDots,
+          height: heightDots,
+          displayValue: false,
+          margin: quietModules * moduleDots,
+          textMargin: 0,
+          fontSize: 0
+        });
+        console.warn("LIS barcode fallback:", err);
+        return;
+      }
+
+      const svgNs = "http://www.w3.org/2000/svg";
+      const bars = [];
+      let x = quietModules;
+
+      codewords.forEach(codeword => {
+        const pattern = LIS_CODE128_PATTERNS[codeword];
+        let isBar = true;
+
+        for (const run of pattern) {
+          const runWidth = Number(run);
+          if (isBar) {
+            bars.push({ x, width: runWidth });
+          }
+          x += runWidth;
+          isBar = !isBar;
+        }
+      });
+
+      const totalModules = x + quietModules;
+      const widthDots = totalModules * moduleDots;
+      const widthMm = widthDots / dotsPerMm;
+      const heightMm = heightDots / dotsPerMm;
+
+      svg.replaceChildren();
+      svg.setAttribute("viewBox", `0 0 ${totalModules} ${barHeight}`);
+      svg.setAttribute("preserveAspectRatio", "none");
+      svg.setAttribute("width", `${widthMm}mm`);
+      svg.setAttribute("height", `${heightMm}mm`);
+      svg.style.width = `${widthMm}mm`;
+      svg.style.height = `${heightMm}mm`;
+      svg.setAttribute("shape-rendering", "crispEdges");
+      svg.setAttribute("data-codewords", codewords.join(","));
+      svg.setAttribute("data-printer-dpi", String(TSC_TE310_BARCODE_PROFILE.dpi));
+      svg.setAttribute("data-module-dots", String(moduleDots));
+      svg.setAttribute("data-width-dots", String(widthDots));
+
+      bars.forEach(bar => {
+        const rect = document.createElementNS(svgNs, "rect");
+        rect.setAttribute("x", String(bar.x));
+        rect.setAttribute("y", "0");
+        rect.setAttribute("width", String(bar.width));
+        rect.setAttribute("height", String(barHeight));
+        rect.setAttribute("fill", "#000");
+        svg.appendChild(rect);
+      });
+    }
+
+    function renderLisBagBarcode(svg, value) {
+      renderLisBarcode(svg, value, {
+        heightDots: 96,
+        barHeight: 32
+      });
+    }
+
+    function renderLisComponentBarcode(svg, value) {
+      renderLisBarcode(svg, value, {
+        heightDots: 108,
+        barHeight: 30
+      });
+    }
+
+    async function printTSCFromRow(encodedRow) {
+      let row = JSON.parse(decodeURIComponent(encodedRow));
+
+      if (!row.bag || row.bag === "-") {
+        return alert("ยังไม่มีเลขถุง");
+      }
+
+      try {
+        await logPrintAction("PRINT_STICKER", row);
+      } catch (err) {
+        alert("ไม่สามารถพิมพ์สติ๊กเกอร์ได้: " + (err.message || err));
+        return;
+      }
+
+      let tsc = document.getElementById("tsc-template");
+      let a4 = document.getElementById("a4-template");
+      let cert = document.getElementById("cert-template");
+
+      let fullName = escapeHtml(row.name || "");
+      let saveTimeShort = escapeHtml((row.saveTime || "").replace(/:\d{2}$/, ""));
+
+      // LIS encodes the full bag identifier, including the CN prefix.
+      // Keep the prefix only once so both new and previously prefixed records work.
+      let bagRaw = (row.bag || "").toString().trim().toUpperCase();
+      let lisBagRaw = bagRaw.startsWith("CN") ? bagRaw : `CN${bagRaw}`;
+      let bag = escapeHtml(lisBagRaw);
+
+      let donorType = escapeHtml(row.type || "");
+      let donorTypeText = donorType ? `(${donorType})` : "";
+      let group = escapeHtml(row.group || "-");
+      let sexShort = escapeHtml(sexToShort(row.gender || ""));
+      const toLisBarcodeValue = (value) => {
+        const raw = (value || "").toString().trim().toUpperCase();
+        if (!raw) return "";
+        return raw.startsWith("CN") ? raw : `CN${raw}`;
+      };
+
+      let c1 = escapeHtml(toLisBarcodeValue(row.c1));
+      let c2 = escapeHtml(toLisBarcodeValue(row.c2));
+      let e1 = escapeHtml(toLisBarcodeValue(row.e1));
+      let e2 = escapeHtml(toLisBarcodeValue(row.e2));
+
+      let componentList = [
+        { code: c1, tag: "C1" },
+        { code: c2, tag: "C2" },
+        { code: e1, tag: "E1" },
+        { code: e2, tag: "E2" },
+        { code: c2, tag: "C2" },
+        { code: e2, tag: "E2" }
+      ];
+
+      let html = "";
+
+      for (let i = 0; i < 5; i++) {
+        html += `
+          <div class="label-box">
+            <div class="st-name">${fullName}</div>
+            <div class="st-line">วันที่เจาะ: ${saveTimeShort}</div>
+
+            <div class="st-bar-wrap">
+              <svg class="bc-bag-sticker" data-value="${bag}"></svg>
+            </div>
+
+            <div class="st-row-between">
+              <span class="st-code">${bag}</span>
+              <span class="st-type">${donorTypeText}</span>
+            </div>
+
+            <div class="st-blood">${group} (${sexShort})</div>
+          </div>
+        `;
+      }
+
+      componentList.forEach(item => {
+        html += `
+          <div class="label-box">
+            <div class="st-bar-wrap">
+              <svg class="bc-main-sticker" data-value="${bag}"></svg>
+            </div>
+
+            <div class="st-row-between">
+              <span class="st-code">${bag} ${group} (${sexShort})</span>
+              <span class="st-type">${donorTypeText}</span>
+            </div>
+
+            <div class="st-component-wrap">
+              <svg class="bc-component-sticker" data-value="${item.code}"></svg>
+              <span class="st-component-tag">${item.tag}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      tsc.innerHTML = html;
+      tsc.className = "active-print";
+      tsc.style.display = "";
+      tsc.style.visibility = "";
+
+      if (a4) {
+        a4.className = "";
+        a4.style.display = "";
+        a4.style.visibility = "";
+      }
+
+      if (cert) {
+        cert.className = "";
+        cert.style.display = "";
+        cert.style.visibility = "";
+      }
+
+      setPrintPageSize("50mm 30mm");
+
+      setTimeout(() => {
+        document.querySelectorAll(".bc-bag-sticker").forEach(el => {
+          renderLisBagBarcode(el, el.dataset.value || "");
+        });
+
+        document.querySelectorAll(".bc-main-sticker").forEach(el => {
+          renderLisBagBarcode(el, el.dataset.value || "");
+        });
+
+        document.querySelectorAll(".bc-component-sticker").forEach(el => {
+          // Match LIS: encode the bag-number digits with the same fixed B/C sequence,
+          // then continue in Code Set B for C1, C2, E1 or E2.
+          renderLisComponentBarcode(el, el.dataset.value || "");
+        });
+
+        window.print();
+      }, 300);
+    }
+
+    async function reprintTSCFromRow(encodedRow) {
+      await printTSCFromRow(encodedRow);
+    }
+
+    function resetPrintTemplates() {
+      const a4 = document.getElementById("a4-template");
+      const tsc = document.getElementById("tsc-template");
+      const cert = document.getElementById("cert-template");
+
+      if (a4) {
+        a4.className = "";
+        a4.style.display = "";
+        a4.style.visibility = "";
+      }
+
+      if (tsc) {
+        tsc.className = "";
+        tsc.style.display = "";
+        tsc.style.visibility = "";
+      }
+
+      if (cert) {
+        cert.className = "";
+        cert.style.display = "";
+        cert.style.visibility = "";
+      }
+    }
+
+    function formatThaiDateForCert(dateValue) {
+      if (!dateValue) return "-";
+
+      if (typeof dateValue === "string" && /^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
+        return dateValue;
+      }
+
+      let d;
+
+      if (dateValue instanceof Date) {
+        d = dateValue;
+      } else {
+        d = new Date(dateValue);
+      }
+
+      if (isNaN(d.getTime())) return "-";
+
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear() + 543;
+
+      return `${day}/${month}/${year}`;
+    }
+
+    window.addEventListener("afterprint", clearPrintPageSize);
+    window.addEventListener("afterprint", resetPrintTemplates);
+  </script>
+  <script src="js/offline-tools.js"></script>
+</body>
+</html>

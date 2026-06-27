@@ -1,0 +1,22 @@
+{
+  "description": "ลำดับช่องสำหรับ Auto TAB — ต้องปรับให้ตรงกับ LIS จริงก่อนใช้",
+  "fields": [
+    "ID_Card",
+    "Prefix",
+    "FirstName",
+    "LastName",
+    "Birthdate",
+    "Gender",
+    "Address",
+    "Phone",
+    "Weight",
+    "BP",
+    "Pulse",
+    "Temperature",
+    "Hb",
+    "Blood_Group",
+    "Bag_Number",
+    "Donor_Type"
+  ],
+  "delayMs": 350
+}
